@@ -1677,7 +1677,22 @@ void Item_factory::load( islot_container &slot, JsonObject &jo, const std::strin
 
 void Item_factory::load( std::vector<islot_pocket> &slot, JsonObject & jo, const std::string &src )
 {
+    JsonArray pockets = jo.get_array("pockets");
+    while (pockets.has_more()) {
+        JsonObject pocket_object = pockets.next_object();
+        islot_pocket pocket;
+        assign(pocket_object, "max_contains_volume", pocket.max_contains_volume);
+        assign(pocket_object, "max_contains_weight", pocket.max_contains_weight);
+        assign(pocket_object, "spoil_multiplier", pocket.spoil_multiplier);
+        assign(pocket_object, "watertight", pocket.watertight);
+        assign(pocket_object, "open_container", pocket.open_container);
+        assign(pocket_object, "hook", pocket.hook);
+        assign(pocket_object, "rigid", pocket.rigid);
+        assign(pocket_object, "nestable", pocket.nestable);
+        assign(pocket_object, "moves", pocket.moves);
 
+        slot.emplace_back(pocket);
+    }
 }
 
 void Item_factory::load( islot_gunmod &slot, JsonObject &jo, const std::string &src )
