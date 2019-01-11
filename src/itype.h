@@ -187,6 +187,39 @@ struct islot_brewable {
     time_duration time = 0;
 };
 
+// intended to be a pocket in the new type of container, unwilling to overwrite the old code for now
+struct islot_pocket {
+    // volume of stuff inside the pocket
+    units::volume contains_volume = 0;
+    // max volume of stuff the pocket can hold
+    units::volume max_contains_volume = 0;
+    // weight of stuff inside the pocket
+    units::mass contains_weight = 0;
+    // max weight of stuff the pocket can hold
+    units::mass max_contains_weight = 0;
+    // multiplier for spoilage rate of contained items
+    float spoil_multiplier = 1;
+    // can hold liquids
+    bool watertight = false;
+    // the item will spill its contents if placed in another container
+    bool open_container = false;
+    /** 
+     * allows only items that can be stored on a hook to be contained in this pocket
+     * overwrites rigid
+     * makes max_contains_volume redundant
+     */
+    bool hook = false;
+    // container's size and encumbrance does not change based on contents.
+    bool rigid = false;
+    // container can be placed into other containers
+    bool nestable = true;
+    /**
+     * base number of moves it takes to pull an item out of the container
+     * given no other items in container, and container is not inside another container
+     */
+    int moves = INVENTORY_HANDLING_PENALTY;
+};
+
 struct islot_container {
     /**
      * Inner volume of the container.
