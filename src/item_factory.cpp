@@ -1675,6 +1675,11 @@ void Item_factory::load( islot_container &slot, JsonObject &jo, const std::strin
     assign( jo, "unseals_into", slot.unseals_into );
 }
 
+void Item_factory::load( std::vector<islot_pocket> &slot, JsonObject & jo, const std::string &src )
+{
+
+}
+
 void Item_factory::load( islot_gunmod &slot, JsonObject &jo, const std::string &src )
 {
     bool strict = src == "dda";
