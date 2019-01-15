@@ -1,4 +1,9 @@
-#include "activity_handlers.h"
+#include "activity_handlers.h" // IWYU pragma: associated
+
+#include <algorithm>
+#include <cassert>
+#include <list>
+#include <vector>
 
 #include "action.h"
 #include "clzones.h"
@@ -28,11 +33,6 @@
 #include "vehicle.h"
 #include "vpart_position.h"
 #include "vpart_reference.h"
-
-#include <algorithm>
-#include <cassert>
-#include <list>
-#include <vector>
 
 void cancel_aim_processing();
 
@@ -176,8 +176,7 @@ void put_into_vehicle( Character &c, item_drop_reason reason, const std::list<it
 
 void stash_on_pet( const std::list<item> &items, monster &pet )
 {
-    units::volume remaining_volume = pet.inv.empty() ? units::volume( 0 ) :
-                                     pet.inv.front().get_storage();
+    units::volume remaining_volume = pet.inv.empty() ? 0_ml : pet.inv.front().get_storage();
     units::mass remaining_weight = pet.weight_capacity();
 
     for( const auto &it : pet.inv ) {
@@ -298,7 +297,7 @@ void put_into_vehicle_or_drop( Character &c, item_drop_reason reason, const std:
                                const tripoint &where )
 {
     if( const cata::optional<vpart_reference> vp =
-            g->m.veh_at( where ).part_with_feature( "CARGO", true ) ) {
+            g->m.veh_at( where ).part_with_feature( "CARGO", false ) ) {
         put_into_vehicle( c, reason, items, vp->vehicle(), vp->part_index() );
         return;
     }
@@ -399,7 +398,7 @@ std::list<act_item> reorder_for_dropping( const player &p, const drop_indexes &d
                     && !second.it->is_worn_only_with( *first.it ) );
     } );
 
-    units::volume storage_loss = 0;                        // Cumulatively increases
+    units::volume storage_loss = 0_ml;                     // Cumulatively increases
     units::volume remaining_storage = p.volume_capacity(); // Cumulatively decreases
 
     while( !worn.empty() && !inv.empty() ) {
@@ -469,7 +468,7 @@ std::list<item> obtain_activity_items( player_activity &act, player &p )
     }
     // Avoid tumbling to the ground. Unload cleanly.
     const units::volume excessive_volume = p.volume_carried() - p.volume_capacity();
-    if( excessive_volume > 0 ) {
+    if( excessive_volume > 0_ml ) {
         const auto excess = p.inv.remove_randomly_by_volume( excessive_volume );
         res.insert( res.begin(), excess.begin(), excess.end() );
     }
@@ -504,7 +503,7 @@ void activity_handlers::washing_finish( player_activity *act, player *p )
 
     // Check again that we have enough water and soap incase the amount in our inventory changed somehow
     // Consume the water and soap
-    units::volume total_volume = 0;
+    units::volume total_volume = 0_ml;
 
     for( const act_item &filthy_item : items ) {
         total_volume += filthy_item.it->volume();
@@ -836,7 +835,8 @@ static int move_cost( const item &it, const tripoint &src, const tripoint &dest 
     return move_cost_inv( it, src, dest );
 }
 
-static void move_item( item &it, int quantity, const tripoint &src, const tripoint &dest )
+static void move_item( item &it, int quantity, const tripoint &src, const tripoint &dest,
+                       vehicle *src_veh, int src_part )
 {
     item leftovers = it;
 
@@ -853,14 +853,24 @@ static void move_item( item &it, int quantity, const tripoint &src, const tripoi
     // Check that we can pick it up.
     if( !it.made_of_from_type( LIQUID ) ) {
         g->u.mod_moves( -move_cost( it, src, dest ) );
-        drop_on_map( g->u, item_drop_reason::deliberate, { it }, dest );
-        // Remove from map.
-        g->m.i_rem( src, &it );
+        put_into_vehicle_or_drop( g->u, item_drop_reason::deliberate, { it }, dest );
+        // Remove from map or vehicle.
+        if( src_veh ) {
+            src_veh->remove_item( src_part, &it );
+        } else {
+            g->m.i_rem( src, &it );
+        }
     }
 
     // If we didn't pick up a whole stack, put the remainder back where it came from.
     if( leftovers.charges > 0 ) {
-        g->m.add_item_or_charges( src, leftovers );
+        if( src_veh ) {
+            if( !src_veh->add_item( src_part, leftovers ) ) {
+                debugmsg( "SortLoot: Source vehicle failed to receive leftover charges." );
+            }
+        } else {
+            g->m.add_item_or_charges( src, leftovers );
+        }
     }
 }
 
@@ -890,9 +900,14 @@ static std::vector<tripoint> route_adjacent( const player &p, const tripoint &de
 
 void activity_on_turn_move_loot( player_activity &, player &p )
 {
-    const auto &mgr = zone_manager::get_manager();
+    auto &mgr = zone_manager::get_manager();
+    if( g->m.check_vehicle_zones( g->get_levz() ) ) {
+        mgr.cache_vzones();
+    }
     const auto abspos = g->m.getabs( p.pos() );
     const auto &src_set = mgr.get_near( zone_type_id( "LOOT_UNSORTED" ), abspos );
+    vehicle *src_veh, *dest_veh;
+    int src_part, dest_part;
 
     // Nuke the current activity, leaving the backlog alone.
     p.activity = player_activity();
@@ -913,9 +928,26 @@ void activity_on_turn_move_loot( player_activity &, player &p )
         }
 
         auto items = std::vector<item *>();
-        for( auto &it : g->m.i_at( src_loc ) ) {
-            if( !it.made_of_from_type( LIQUID ) ) { // skip unpickable liquid
-                items.push_back( &it );
+
+        //Check source for cargo part
+        //map_stack and vehicle_stack are different types but inherit from item_stack
+        //TODO: use one for loop
+        if( const cata::optional<vpart_reference> vp = g->m.veh_at( src_loc ).part_with_feature( "CARGO",
+                false ) ) {
+            src_veh = &vp->vehicle();
+            src_part = vp->part_index();
+            for( auto &it : src_veh->get_items( src_part ) ) {
+                if( !it.made_of_from_type( LIQUID ) ) { // skip unpickable liquid
+                    items.push_back( &it );
+                }
+            }
+        } else {
+            src_veh = nullptr;
+            src_part = -1;
+            for( auto &it : g->m.i_at( src_loc ) ) {
+                if( !it.made_of_from_type( LIQUID ) ) { // skip unpickable liquid
+                    items.push_back( &it );
+                }
             }
         }
 
@@ -931,13 +963,30 @@ void activity_on_turn_move_loot( player_activity &, player &p )
                 for( auto &dest : dest_set ) {
                     const auto &dest_loc = g->m.getlocal( dest );
 
+                    //Check destination for cargo part
+                    if( const cata::optional<vpart_reference> vp = g->m.veh_at( dest_loc ).part_with_feature( "CARGO",
+                            false ) ) {
+                        dest_veh = &vp->vehicle();
+                        dest_part = vp->part_index();
+                    } else {
+                        dest_veh = nullptr;
+                        dest_part = -1;
+                    }
+
                     // skip tiles with inaccessible furniture, like filled charcoal kiln
                     if( !g->m.can_put_items_ter_furn( dest_loc ) ) {
                         continue;
                     }
 
-                    // check free space at destination tile
-                    if( g->m.free_volume( dest_loc ) > it->volume() ) {
+                    units::volume free_space;
+                    // if there's a vehicle with space do not check the tile beneath
+                    if( dest_veh ) {
+                        free_space = dest_veh->free_volume( dest_part );
+                    } else {
+                        free_space = g->m.free_volume( dest_loc );
+                    }
+                    // check free space at destination
+                    if( free_space > it->volume() ) {
                         // before we move any item, check if player is at or adjacent to the loot source tile
                         if( !is_adjacent_or_closer ) {
                             std::vector<tripoint> route;
@@ -969,12 +1018,10 @@ void activity_on_turn_move_loot( player_activity &, player &p )
                             p.set_destination( route, player_activity( activity_id( "ACT_MOVE_LOOT" ) ) );
                             return;
                         }
-
-                        move_item( *it, it->count(), src_loc, dest_loc );
+                        move_item( *it, it->count(), src_loc, dest_loc, src_veh, src_part );
                         break;
                     }
                 }
-
                 if( p.moves <= 0 ) {
                     // Restart activity and break from cycle.
                     p.assign_activity( activity_id( "ACT_MOVE_LOOT" ) );
