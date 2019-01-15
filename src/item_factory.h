@@ -2,8 +2,6 @@
 #ifndef ITEM_FACTORY_H
 #define ITEM_FACTORY_H
 
-#include "itype.h"
-
 #include <functional>
 #include <list>
 #include <map>
@@ -11,6 +9,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "itype.h"
 
 bool item_is_blacklisted( const std::string &id );
 
@@ -287,6 +287,7 @@ class Item_factory
 
         void load( islot_tool &slot, JsonObject &jo, const std::string &src );
         void load( islot_container &slot, JsonObject &jo, const std::string &src );
+        void load( std::vector<islot_pocket> &slot, JsonObject &jo, const std::string &src );
         void load( islot_comestible &slot, JsonObject &jo, const std::string &src );
         void load( islot_brewable &slot, JsonObject &jo, const std::string &src );
         void load( islot_armor &slot, JsonObject &jo, const std::string &src );
