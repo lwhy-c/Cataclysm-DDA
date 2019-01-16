@@ -157,6 +157,7 @@ class Item_factory
         void load_book( JsonObject &jo, const std::string &src );
         void load_comestible( JsonObject &jo, const std::string &src );
         void load_container( JsonObject &jo, const std::string &src );
+        void load_pockets(JsonObject &jo, const std::string &src);
         void load_engine( JsonObject &jo, const std::string &src );
         void load_wheel( JsonObject &jo, const std::string &src );
         void load_fuel( JsonObject &jo, const std::string &src );
