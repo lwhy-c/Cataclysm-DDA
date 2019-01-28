@@ -489,6 +489,7 @@ class item_location::impl::item_in_container : public item_location::impl
             if( !target() ) {
                 return false;
             }
+            return true;
         }
 
         void serialize( JsonOut &js ) const override {
