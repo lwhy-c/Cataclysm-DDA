@@ -510,6 +510,19 @@ class item_location::impl::item_in_container : public item_location::impl
             return parent.position();
         }
 
+        int obtain( Character &ch, long qty ) override {
+            ch.moves -= obtain_cost( ch, qty );
+
+            item obj = target()->split( qty );
+            if( !obj.is_null() ) {
+                return ch.get_item_position( &ch.i_add( obj, should_stack ) );
+            } else {
+                int inv = ch.get_item_position( &ch.i_add( *target(), should_stack ) );
+                remove_item();
+                return inv;
+            }
+        }
+
         int obtain_cost( const Character &ch, long qty ) const override {
             if( !target() ) {
                 return 0;
@@ -527,6 +540,11 @@ class item_location::impl::item_in_container : public item_location::impl
             }
             return obtain_cost;
 
+        }
+
+        // I don't know what this does. However, this needed an override, and this return seemed as good as any.
+        void remove_item() {
+            return parent.remove_item();
         }
 };
 
