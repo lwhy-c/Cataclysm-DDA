@@ -7,7 +7,10 @@
 #include <string>
 
 #include "map_selector.h"
+#include "int_id.h"
 
+struct islot_pocket;
+using pocket_id = int_id<islot_pocket>;
 struct tripoint;
 class item;
 class Character;
