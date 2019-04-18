@@ -36,16 +36,109 @@ static const trait_id trait_THRESH_FELINE( "THRESH_FELINE" );
 static const trait_id trait_THRESH_BIRD( "THRESH_BIRD" );
 static const trait_id trait_THRESH_URSINE( "THRESH_URSINE" );
 
+// panel_element wrapper
+
+panel_element::panel_element( std::vector<std::string> input )
+{
+    element_string = input;
+}
+
+bool panel_element::empty() const
+{
+    return element_string.empty();
+}
+
+std::vector<std::string>::const_iterator panel_element::cbegin() const
+{
+    return element_string.cbegin();
+}
+
+std::vector<std::string>::const_iterator panel_element::cend() const
+{
+    return element_string.cend();
+}
+
+size_t panel_element::size() const
+{
+    return element_string.size();
+}
+
+panel_element panel_element::operator=( std::vector<std::string> rhs )
+{
+    return panel_element( rhs );
+}
+
+// element printing functions
+
+draw_panel_element::draw_panel_element( std::function<panel_element( int )> func, std::string nm )
+{
+    colored_element_lines = func;
+    name = nm;
+}
+
+void draw_panel_element::print_element( const catacurses::window &w ) const
+{
+    unsigned int max_x = getmaxx( w );
+    if( start_location.x >= max_x ) {
+        return;
+    }
+    panel_element lines = colored_element_lines( max_x - start_location.x );
+    unsigned int y = start_location.y;
+    unsigned int max_y = getmaxy( w );
+    for( auto it = lines.cbegin(); it != lines.cend(); it++ ) {
+        if( y > max_y ) {
+            return;
+        }
+        print_colored_text( w, y, start_location.x, c_dark_gray, c_dark_gray, it->c_str() );
+    }
+}
+
+std::string draw_panel_element::get_id() const
+{
+    return name;
+}
+
+std::string draw_panel_element::get_name() const
+{
+    return _( name );
+}
+
+unsigned int draw_panel_element::get_height() const
+{
+    return colored_element_lines( 1 ).size();
+}
+
+unsigned int draw_panel_element::get_width() const
+{
+    panel_element elem = colored_element_lines( -1 );
+    size_t width;
+    for( auto it = elem.cbegin(); it != elem.cend(); it++ ) {
+        width = std::max( width, it->size() );
+    }
+    return width;
+}
+
+void draw_panel_element::move_element( point to )
+{
+    if( to.x >= 0 && to.y >= 0 ) {
+        start_location = to;
+    }
+}
+
 // constructor
 window_panel::window_panel( std::function<void( player &, const catacurses::window & )>
                             draw_func, std::string nm, int ht, int wd, bool def_toggle )
 {
-    draw = draw_func;
     name = nm;
     height = ht;
     width = wd;
     toggle = def_toggle;
     default_toggle = def_toggle;
+}
+
+void window_panel::add_element( draw_panel_element new_element )
+{
+    panel_elements.emplace( new_element.get_id(), new_element );
 }
 
 // ====================================
