@@ -194,8 +194,8 @@ item::item( const itype *type, time_point turn, long qty ) : type( type ), bday(
             emplace_back( type->magazine->default_ammo, calendar::turn, type->magazine->count );
         }
 
-    } else if( get_comestible() ) {
-        active = is_food();
+    } else if( has_temperature() || goes_bad() ) {
+        active = true;
         last_temp_check = bday;
         last_rot_check = bday;
 
@@ -3912,6 +3912,9 @@ int get_hourly_rotpoints_at_temp( const int temp )
 
 void item::calc_rot( time_point time )
 {
+    if( !goes_bad() ) {
+        return;
+    }
     // Avoid needlessly calculating already rotten things.  Corpses should
     // always rot away and food rots away at twice the shelf life.  If the food
     // is in a sealed container they won't rot away, this avoids needlessly
@@ -4454,7 +4457,11 @@ nc_color item::damage_color() const
         case 3:
             return c_light_red;
         case 4:
-            return c_red;
+            if( damage() >= max_damage() ) {
+                return c_dark_gray;
+            } else {
+                return c_red;
+            }
     }
 }
 
@@ -4472,7 +4479,12 @@ std::string item::damage_symbol() const
         case 3:
             return _( R"(\.)" );
         case 4:
-            return _( R"(..)" );
+            if( damage() >= max_damage() ) {
+                return _( R"(XX)" );
+            } else {
+                return _( R"(..)" );
+            }
+
     }
 }
 
@@ -7050,7 +7062,7 @@ void item::process_temperature_rot( int temp, float insulation, const tripoint p
 
     // process temperature and rot at most once every 100_turns (10 min)
     // note we're also gated by item::processing_speed
-    time_duration smallest_interval = 100_turns;
+    time_duration smallest_interval = 10_minutes;
     if( now - last_temp_check < smallest_interval ) {
         // Could be newly created item.
         if( specific_energy < 0 ) {
@@ -7121,7 +7133,7 @@ void item::process_temperature_rot( int temp, float insulation, const tripoint p
 
 
             // Calculate item rot from item temperature
-            if( goes_bad() && time - last_rot_check >  smallest_interval ) {
+            if( time - last_rot_check >  smallest_interval ) {
                 calc_rot( time );
 
                 if( has_rotten_away() || ( is_corpse() && rot > 10_days ) ) {
@@ -7141,6 +7153,7 @@ void item::process_temperature_rot( int temp, float insulation, const tripoint p
         }
         calc_temp( temp, insulation, now );
         calc_rot( now );
+        return;
     }
 
     // Some new items can evade all the above. Set them here.
