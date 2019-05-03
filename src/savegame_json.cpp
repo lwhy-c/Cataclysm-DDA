@@ -575,6 +575,14 @@ void player::load( JsonObject &data )
         power_level = 0;
     }
 
+    data.read( "stamina", stamina );
+    if( !data.read( "stamina_max_penalty", stamina_max_penalty ) ) {
+        stamina_max_penalty = 0;
+    }
+    if( !data.read( "stamina_used", stamina_used ) ) {
+        stamina_used = 0;
+    }
+
     data.read( "ma_styles", ma_styles );
     // Fix up old ma_styles that doesn't include fake styles
     if( std::find( ma_styles.begin(), ma_styles.end(), style_kicks ) == ma_styles.end() &&
@@ -709,6 +717,10 @@ void player::store( JsonOut &json ) const
     json.member( "power_level", power_level );
     json.member( "max_power_level", max_power_level );
 
+    json.member( "stamina", stamina );
+    json.member( "stamina_max_penalty", stamina_max_penalty );
+    json.member( "stamina_used", stamina_used );
+
     // martial arts
     /*for (int i = 0; i < ma_styles.size(); i++) {
         ptmpvect.push_back( pv( ma_styles[i] ) );
@@ -809,7 +821,6 @@ void player::serialize( JsonOut &json ) const
     json.member( "style_selected", style_selected );
     json.member( "keep_hands_free", keep_hands_free );
 
-    json.member( "stamina", stamina );
     json.member( "move_mode", move_mode );
 
     // crafting etc
@@ -916,7 +927,6 @@ void player::deserialize( JsonIn &jsin )
     data.read( "style_selected", style_selected );
     data.read( "keep_hands_free", keep_hands_free );
 
-    data.read( "stamina", stamina );
     data.read( "move_mode", move_mode );
 
     set_highest_cat_level();

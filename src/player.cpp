@@ -173,6 +173,7 @@ const efftype_id effect_shakes( "shakes" );
 const efftype_id effect_sleep( "sleep" );
 const efftype_id effect_slept_through_alarm( "slept_through_alarm" );
 const efftype_id effect_spores( "spores" );
+const efftype_id effect_stamina_penalty( "stamina_penalty" );
 const efftype_id effect_stim( "stim" );
 const efftype_id effect_stim_overdose( "stim_overdose" );
 const efftype_id effect_stunned( "stunned" );
@@ -574,6 +575,7 @@ void player::normalize()
 
     temp_conv.fill( BODYTEMP_NORM );
     stamina = get_stamina_max();
+    stamina_max_penalty = 0;
 }
 
 std::string player::disp_name( bool possessive ) const
@@ -2462,11 +2464,16 @@ void player::mod_stat( const std::string &stat, float modifier )
         mod_thirst( modifier );
     } else if( stat == "fatigue" ) {
         mod_fatigue( modifier );
+    } else if( stat == "stored_nutr" ) {
+        mod_stored_nutr( modifier );
     } else if( stat == "oxygen" ) {
         oxygen += modifier;
     } else if( stat == "stamina" ) {
         stamina += modifier;
-        stamina = std::min( stamina, get_stamina_max() );
+        if( modifier < 0 ) {
+            stamina_used += -modifier;
+        }
+        stamina = std::min( stamina, get_stamina_max() - get_stamina_max_penalty() );
         stamina = std::max( 0, stamina );
     } else {
         // Fall through to the creature method.
@@ -4828,6 +4835,37 @@ void player::regen( int rate_multiplier )
     if( radiation > 0 ) {
         radiation = std::max( 0, radiation - roll_remainder( rate_multiplier / 50.0f ) );
     }
+
+    // Apply max stamina penalty and increase needs based on used stamina
+    int stamina_penalty = roll_remainder( stamina_used * g->stamina_penalty_rate *
+                                          ( 1.0f + mutation_value( "fatigue_modifier" ) ) *
+                                          ( is_npc() ? 0.25f : 1.0f ) );
+    mod_stamina_max_penalty( stamina_penalty );
+
+    if( !has_trait( trait_DEBUG_LS ) ) {
+        auto modify_stat = [&]( const std::string & stat, const float & option,
+        const std::string & mutation_mod ) {
+            float mutation_val = 1.0f + mutation_value( mutation_mod );
+            float mod_result = roll_remainder( stamina_used * option * mutation_val );
+            if( is_npc() ) {
+                mod_result *= ( g->no_npc_food ? 0.0f : 0.25f );
+            }
+            mod_stat( stat, mod_result );
+        };
+        modify_stat( "stored_nutr", g->stamina_increase_hunger, "metabolism_modifier" );
+        modify_stat( "thirst", g->stamina_increase_thirst, "thirst_modifier" );
+        modify_stat( "fatigue", g->stamina_increase_fatigue, "fatigue_modifier" );
+    }
+    stamina_used = 0;
+
+    // regenerate max stamina
+    if( rest > 0 ) {
+        float stamina_regen_mutations = 1 + mutation_value( "fatigue_regen_modifier" );
+        // Maximum stamina penalty (0.75 of max stamina) will disappear after 8 hours of sleeping
+        float stamina_regen_rate = 0.75f * get_stamina_max() / HOURS( 8 );
+        float stamina_max_regen = rest * stamina_regen_rate * MINUTES( 5 ) * stamina_regen_mutations;
+        mod_stamina_max_penalty( - stamina_max_regen );
+    }
 }
 
 void player::update_stamina( int turns )
@@ -4835,13 +4873,11 @@ void player::update_stamina( int turns )
     float stamina_recovery = 0.0f;
     // Recover some stamina every turn.
     // Mutated stamina works even when winded
-    float stamina_multiplier = ( !has_effect( effect_winded ) ? 1.0f : 0.0f ) +
+    float stamina_multiplier = ( has_effect( effect_winded ) ? 0.5f : 1.0f ) +
                                mutation_value( "stamina_regen_modifier" );
     if( stamina_multiplier > 0.0f ) {
         // But mouth encumbrance interferes, even with mutated stamina.
         stamina_recovery += stamina_multiplier * std::max( 1.0f, 10.0f - ( encumb( bp_mouth ) / 10.0f ) );
-        // TODO: recovering stamina causes hunger/thirst/fatigue.
-        // TODO: Tiredness slowing recovery
     }
 
     // stim recovers stamina (or impairs recovery)
@@ -4867,10 +4903,34 @@ void player::update_stamina( int turns )
         }
     }
 
-    stamina = roll_remainder( stamina + stamina_recovery * turns );
+    // Decrease stamina regeneration if tired
+    // Regeneration will be twice slower after 24 hours without sleep or stimulants and
+    // only 10% after 2 days without sleep
+    float fatigue_mod = std::max( ( 1 - get_fatigue() / 500.0f ), 0.1f );
+    stamina_recovery *= fatigue_mod;
 
-    // Cap at max
-    stamina = std::min( std::max( stamina, 0 ), max_stam );
+    // Calculate stamina change and cap at max
+    const int max_stam_penalty = get_stamina_max() - get_stamina_max_penalty();
+    int stamina_change = std::min( roll_remainder( stamina_recovery * turns ),
+                                   max_stam_penalty - stamina );
+    stamina += stamina_change;
+
+    // Add winded effect
+    if( stamina < ( get_stamina_max() / 10 ) ) {
+        add_effect( effect_winded, 1_turns, num_bp, true );
+    } else {
+        remove_effect( effect_winded );
+    }
+
+    // add info effect
+    float relative_stamina = static_cast<float>( stamina_max_penalty ) / get_stamina_max();
+    if( relative_stamina > 0.5 ) {
+        add_effect( effect_stamina_penalty, 1_turns, num_bp, false, 3 );
+    } else if( relative_stamina > 0.25 ) {
+        add_effect( effect_stamina_penalty, 1_turns, num_bp, false, 2 );
+    } else if( relative_stamina > 0.1 ) {
+        add_effect( effect_stamina_penalty, 1_turns, num_bp, false, 1 );
+    }
 }
 
 bool player::is_hibernating() const
@@ -12100,9 +12160,22 @@ int player::get_hp_max( hp_part bp ) const
 
 int player::get_stamina_max() const
 {
-    int maxStamina = get_option< int >( "PLAYER_MAX_STAMINA" );
+    int maxStamina = g->stamina_max_default;
     maxStamina *= Character::mutation_value( "max_stamina_modifier" );
     return maxStamina;
+}
+
+int player::get_stamina_max_penalty() const
+{
+    return stamina_max_penalty;
+}
+
+void player::mod_stamina_max_penalty( int modifier )
+{
+    stamina_max_penalty = stamina_max_penalty + modifier;
+    // stamina pool penalty cannot exceed 75% of maximum stamina
+    stamina_max_penalty = std::min( stamina_max_penalty, get_stamina_max() * 3 / 4 );
+    stamina_max_penalty = std::max( stamina_max_penalty, 0 );
 }
 
 void player::burn_move_stamina( int moves )

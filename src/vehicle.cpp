@@ -3747,11 +3747,6 @@ void vehicle::consume_fuel( int load, const int t_seconds, bool skip_electric )
         if( g->u.has_active_bionic( bionic_id( "bio_jointservo" ) ) ) {
             g->u.charge_power( -10 );
         }
-        if( one_in( 10 ) ) {
-            g->u.mod_stored_nutr( mod );
-            g->u.mod_thirst( mod );
-            g->u.mod_fatigue( mod );
-        }
         if( g->u.has_active_bionic( bionic_id( "bio_torsionratchet" ) ) ) {
             g->u.mod_stat( "stamina", -mod * 30 );
         } else if( g->u.has_active_bionic( bionic_id( "bio_jointservo" ) ) ) {
