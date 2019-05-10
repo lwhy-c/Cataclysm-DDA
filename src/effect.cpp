@@ -7,6 +7,7 @@
 #include <unordered_set>
 
 #include "debug.h"
+#include "generic_factory.h"
 #include "json.h"
 #include "messages.h"
 #include "output.h"
@@ -19,26 +20,24 @@
 namespace
 {
 std::map<efftype_id, effect_type> effect_types;
+generic_factory<effect_type> spell_factory( "spell" );
 }
 
-/** @relates string_id */
 template<>
 const effect_type &string_id<effect_type>::obj() const
 {
-    const auto iter = effect_types.find( *this );
-    if( iter == effect_types.end() ) {
-        debugmsg( "invalid effect type id %s", c_str() );
-        static const effect_type dummy{};
-        return dummy;
-    }
-    return iter->second;
+    return spell_factory.obj( *this );
 }
 
-/** @relates string_id */
 template<>
 bool string_id<effect_type>::is_valid() const
 {
-    return effect_types.count( *this ) > 0;
+    return spell_factory.is_valid( *this );
+}
+
+void effect_type::load_effect( JsonObject &jo, const std::string &src )
+{
+    spell_factory.load( jo, src );
 }
 
 const efftype_id effect_weed_high( "weed_high" );
@@ -1180,106 +1179,61 @@ static const std::unordered_set<efftype_id> hardcoded_movement_impairing = {{
     }
 };
 
-void load_effect_type( JsonObject &jo )
+void effect_type::load( JsonObject &jo, const std::string & )
 {
-    effect_type new_etype;
-    new_etype.id = efftype_id( jo.get_string( "id" ) );
+    mandatory( jo, was_loaded, "id", id );
 
-    if( jo.has_member( "name" ) ) {
-        JsonArray jsarr = jo.get_array( "name" );
-        while( jsarr.has_more() ) {
-            translation name;
-            if( !jsarr.read_next( name ) ) {
-                jsarr.throw_error( "Error reading effect names" );
-            }
-            new_etype.name.emplace_back( name );
-        }
+    optional( jo, was_loaded, "name", name );
+    optional( jo, was_loaded, "speed_name", speed_mod_name, "" );
+    optional( jo, was_loaded, "desc", desc );
+    optional( jo, was_loaded, "reduced_desc", reduced_desc, desc );
+    optional( jo, was_loaded, "part_descs", part_descs, false );
+    std::string r;
+    optional( jo, was_loaded, "rating", r, "neutral" );
+    if( r == "good" ) {
+        rating = e_good;
+    }  else if( r == "bad" ) {
+        rating = e_bad;
+    } else if( r == "mixed" ) {
+        rating = e_mixed;
     } else {
-        new_etype.name.emplace_back();
+        rating = e_neutral;
     }
-    new_etype.speed_mod_name = jo.get_string( "speed_name", "" );
+    optional( jo, was_loaded, "apply_message", apply_message, "" );
+    optional( jo, was_loaded, "remove_message", remove_message, "" );
+    optional( jo, was_loaded, "apply_memorial_log", apply_memorial_log, "" );
+    optional( jo, was_loaded, "remove_memorial_log", remove_memorial_log, "" );
 
-    if( jo.has_member( "desc" ) ) {
-        JsonArray jsarr = jo.get_array( "desc" );
-        while( jsarr.has_more() ) {
-            new_etype.desc.push_back( jsarr.next_string() );
-        }
-    } else {
-        new_etype.desc.push_back( "" );
-    }
-    if( jo.has_member( "reduced_desc" ) ) {
-        JsonArray jsarr = jo.get_array( "reduced_desc" );
-        while( jsarr.has_more() ) {
-            new_etype.reduced_desc.push_back( jsarr.next_string() );
-        }
-    } else {
-        new_etype.reduced_desc = new_etype.desc;
-    }
+    optional( jo, was_loaded, "resist_traits", resist_traits );
+    optional( jo, was_loaded, "resist_effects", resist_effects );
+    optional( jo, was_loaded, "removes_effects", removes_effects );
+    optional( jo, was_loaded, "blocks_effects", blocks_effects );
 
-    new_etype.part_descs = jo.get_bool( "part_descs", false );
+    optional( jo, was_loaded, "max_intensity", max_intensity, 1 );
+    optional( jo, was_loaded, "max_duration", max_duration, 0 );
+    optional( jo, was_loaded, "dur_add_perc", dur_add_perc, 100 );
+    optional( jo, was_loaded, "int_add_val", int_add_val, 0 );
+    optional( jo, was_loaded, "int_decay_step", int_decay_step, -1 );
+    optional( jo, was_loaded, "int_decay_tick", int_decay_tick, 0 );
+    optional( jo, was_loaded, "int_dur_factor", int_dur_factor, 0 );
 
-    if( jo.has_member( "rating" ) ) {
-        std::string r = jo.get_string( "rating" );
-        if( r == "good" ) {
-            new_etype.rating = e_good;
-        } else if( r == "neutral" ) {
-            new_etype.rating = e_neutral;
-        } else if( r == "bad" ) {
-            new_etype.rating = e_bad;
-        } else if( r == "mixed" ) {
-            new_etype.rating = e_mixed;
-        } else {
-            new_etype.rating = e_neutral;
-        }
-    } else {
-        new_etype.rating = e_neutral;
-    }
-    new_etype.apply_message = jo.get_string( "apply_message", "" );
-    new_etype.remove_message = jo.get_string( "remove_message", "" );
-    new_etype.apply_memorial_log = jo.get_string( "apply_memorial_log", "" );
-    new_etype.remove_memorial_log = jo.get_string( "remove_memorial_log", "" );
+    load_miss_msgs( jo, "miss_messages" );
+    load_decay_msgs( jo, "decay_messages" );
 
-    for( auto &&f : jo.get_string_array( "resist_traits" ) ) { // *NOPAD*
-        new_etype.resist_traits.push_back( trait_id( f ) );
-    }
-    for( auto &&f : jo.get_string_array( "resist_effects" ) ) { // *NOPAD*
-        new_etype.resist_effects.push_back( efftype_id( f ) );
-    }
-    for( auto &&f : jo.get_string_array( "removes_effects" ) ) { // *NOPAD*
-        new_etype.removes_effects.push_back( efftype_id( f ) );
-    }
-    for( auto &&f : jo.get_string_array( "blocks_effects" ) ) { // *NOPAD*
-        new_etype.blocks_effects.push_back( efftype_id( f ) );
-    }
+    optional( jo, was_loaded, "main_parts_only", main_parts_only, false );
+    optional( jo, was_loaded, "show_in_info", show_in_info, false );
+    optional( jo, was_loaded, "pkill_addict_reduces", pkill_addict_reduces, false );
 
-    new_etype.max_intensity = jo.get_int( "max_intensity", 1 );
-    new_etype.max_duration = time_duration::from_turns( jo.get_int( "max_duration", 0 ) );
-    new_etype.dur_add_perc = jo.get_int( "dur_add_perc", 100 );
-    new_etype.int_add_val = jo.get_int( "int_add_val", 0 );
-    new_etype.int_decay_step = jo.get_int( "int_decay_step", -1 );
-    new_etype.int_decay_tick = jo.get_int( "int_decay_tick", 0 );
-    new_etype.int_dur_factor = time_duration::from_turns( jo.get_int( "int_dur_factor", 0 ) );
+    optional( jo, was_loaded, "pain_sizing", pain_sizing, false );
+    optional( jo, was_loaded, "hurt_sizing", hurt_sizing, false );
+    optional( jo, was_loaded, "harmful_cough", harmful_cough, false );
 
-    new_etype.load_miss_msgs( jo, "miss_messages" );
-    new_etype.load_decay_msgs( jo, "decay_messages" );
+    optional( jo, was_loaded, "max_effective_intensity", max_effective_intensity, 0 );
+    
+    load_mod_data( jo, "base_mods" );
+    load_mod_data( jo, "scaling_mods" );
 
-    new_etype.main_parts_only = jo.get_bool( "main_parts_only", false );
-    new_etype.show_in_info = jo.get_bool( "show_in_info", false );
-    new_etype.pkill_addict_reduces = jo.get_bool( "pkill_addict_reduces", false );
-
-    new_etype.pain_sizing = jo.get_bool( "pain_sizing", false );
-    new_etype.hurt_sizing = jo.get_bool( "hurt_sizing", false );
-    new_etype.harmful_cough = jo.get_bool( "harmful_cough", false );
-
-    new_etype.max_effective_intensity = jo.get_int( "max_effective_intensity", 0 );
-
-    new_etype.load_mod_data( jo, "base_mods" );
-    new_etype.load_mod_data( jo, "scaling_mods" );
-
-    new_etype.impairs_movement = hardcoded_movement_impairing.count( new_etype.id ) > 0;
-
-    effect_types[new_etype.id] = new_etype;
-
+    impairs_movement = hardcoded_movement_impairing.count( id ) > 0;
 }
 
 void reset_effect_types()

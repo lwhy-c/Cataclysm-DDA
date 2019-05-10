@@ -73,6 +73,8 @@ class effect_type
 
         bool is_show_in_info() const;
 
+        static void load_effect( JsonObject &jo, const std::string &src );
+        void load( JsonObject &jo, const std::string & );
         /** Loading helper functions */
         bool load_mod_data( JsonObject &jo, const std::string &member );
         bool load_miss_msgs( JsonObject &jo, const std::string &member );
@@ -80,6 +82,8 @@ class effect_type
 
         /** Registers the effect in the global map */
         static void register_ma_buff_effect( const effect_type &eff );
+
+        bool was_loaded;
 
     protected:
         int max_intensity;

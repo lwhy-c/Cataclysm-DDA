@@ -304,7 +304,7 @@ void DynamicDataLoader::initialize()
     add( "tool_quality", &quality::load_static );
     add( "technique", &load_technique );
     add( "martial_art", &load_martial_art );
-    add( "effect_type", &load_effect_type );
+    add( "effect_type", &effect_type::load_effect );
     add( "tutorial_messages", &load_tutorial_messages );
     add( "overmap_terrain", &overmap_terrains::load );
     add( "construction", &load_construction );
