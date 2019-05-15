@@ -65,6 +65,7 @@
 #include "line.h"
 #include "live_view.h"
 #include "loading_ui.h"
+#include "magic.h"
 #include "map.h"
 #include "map_item_stack.h"
 #include "map_iterator.h"
@@ -2240,6 +2241,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "unload" );
     ctxt.register_action( "throw" );
     ctxt.register_action( "fire" );
+    ctxt.register_action( "cast_spell" );
     ctxt.register_action( "fire_burst" );
     ctxt.register_action( "select_fire_mode" );
     ctxt.register_action( "drop" );
@@ -3156,6 +3158,9 @@ void game::draw_panels( size_t column, size_t index )
     }
     log_height = std::max( TERMY - log_height, 3 );
     for( const auto &panel : mgr.get_current_layout() ) {
+        if( !panel.render() ) {
+            continue;
+        }
         // height clamped to window height.
         int h = std::min( panel.get_height(), TERMY - y );
         if( h == -2 ) {

@@ -28,15 +28,20 @@ class window_panel
 {
     public:
         window_panel( std::function<void( player &, const catacurses::window & )> draw_func,
-                      const std::string &nm, int ht, int wd, bool default_toggle );
+                      const std::string &nm, int ht, int wd, bool default_toggle,
+                      std::function<bool( void )> render_func = default_render );
 
         std::function<void( player &, const catacurses::window & )> draw;
+        std::function<bool()> render;
         int get_height() const;
         int get_width() const;
         std::string get_name() const;
         bool toggle;
 
     private:
+        static bool default_render() {
+            return true;
+        }
         int height;
         int width;
         bool default_toggle;
