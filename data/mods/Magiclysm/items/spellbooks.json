@@ -93,10 +93,7 @@
     "price": 30000,
     "symbol": "?",
     "color": "green",
-    "use_action": {
-      "type": "learn_spell",
-      "spells": [ "smite" ]
-    }
+    "use_action": { "type": "learn_spell", "spells": [ "smite" ] }
   },
   {
     "id": "winter_grasp",
@@ -108,10 +105,7 @@
     "price": 1904,
     "symbol": "?",
     "color": "light_blue",
-    "use_action": {
-      "type": "learn_spell",
-      "spells": [ "cone_cold", "ice_spike", "hoary_blast", "chilling_touch", "frost_spray" ]
-    }
+    "use_action": { "type": "learn_spell", "spells": [ "cone_cold", "ice_spike", "hoary_blast", "chilling_touch", "frost_spray" ] }
   },
   {
     "id": "tome_of_storms",
