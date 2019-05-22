@@ -363,5 +363,30 @@
     "min_range": 1,
     "max_range": 20,
     "range_increment": 1
+  },
+  {
+    "id": "faerie_fire",
+    "type": "SPELL",
+    "name": "Faerie Fire",
+    "description": "Lights up the forces of evil with a glowing radiance.",
+    "effect": "target_attack",
+    "effect_str": "enchant_faerie_fire",
+    "valid_targets": [ "hostile" ],
+    "max_level": 20,
+    "min_damage": 0,
+    "max_damage": 0,
+    "damage_increment": 0,
+    "min_aoe": 10,
+    "max_aoe": 50,
+    "aoe_increment": 5,
+    "min_range": 5,
+    "max_range": 20,
+    "range_increment": 1,
+    "spell_class": "WIZARD",
+    "base_casting_time": 200,
+    "base_energy_cost": 350,
+    "energy_source": "MANA",
+    "difficulty": 4,
+    "damage_type": "fire"
   }
 ]

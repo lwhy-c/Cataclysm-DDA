@@ -57,5 +57,16 @@
     "rating": "good",
     "show_in_info": true,
     "base_mods": { "environmental_protection": [ 5 ], "material_thickness": [ 5 ], "warmth": [ 20 ] }
+  },
+  {
+    "type": "effect_type",
+    "id": "enchant_faerie_fire",
+    "name": [ "Faerie Fire" ],
+    "desc": [ "Lit up by Faerie Fire." ],
+    "apply_message": "Your are lit up.",
+    "remove_message": "Your enemies light fades.",
+    "rating": "bad",
+    "show_in_info": true,
+    "flags": [ "LIGHT_5" ]
   }
 ]

@@ -170,5 +170,23 @@
     "bashing": 10,
     "electric": 15,
     "flags": [ "UNARMED_WEAPON", "DURABLE_MELEE", "NONCONDUCTIVE", "LIGHT_5" ]
+  },
+  {
+    "type": "GENERIC",
+    "id": "warhammer_spiritual",
+    "name": "Spiritual Hammer",
+    "description": "A medieval hammer made for battle.  Its odd shape and balance make it an excellent weapon, but an ineffective tool.",
+    "weight": 1337,
+    "to_hit": 1,
+    "color": "brown",
+    "symbol": "/",
+    "material": [ "iron", "wood" ],
+    "techniques": [ "WBLOCK_1", "BRUTAL", "SWEEP" ],
+    "flags": [ "DURABLE_MELEE", "SPEAR", "NONCONDUCTIVE", "BELT_CLIP" ],
+    "volume": 5,
+    "bashing": 20,
+    "cutting": 20,
+    "price": 0,
+    "qualities": [ [ "HAMMER", 1 ] ]
   }
 ]
