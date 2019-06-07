@@ -778,7 +778,7 @@ bool avatar_action::fire( avatar &you, map &m, item &weapon, int bp_cost )
     return avatar_action::fire( you, m );
 }
 
-void avatar_action::plthrow( avatar &you, int pos,
+void avatar_action::plthrow( avatar &you, item_location &loc,
                              const cata::optional<tripoint> &blind_throw_from_pos )
 {
     if( you.has_active_mutation( trait_SHELL2 ) ) {
@@ -786,18 +786,12 @@ void avatar_action::plthrow( avatar &you, int pos,
         return;
     }
 
-    if( pos == INT_MIN ) {
-        pos = g->inv_for_all( _( "Throw item" ), _( "You don't have any items to throw." ) );
-        g->refresh_all();
-    }
-
-    if( pos == INT_MIN ) {
-        add_msg( _( "Never mind." ) );
+    if( loc.where() != item_location::type::character ) {
+        add_msg( m_info, _( "You need to pick up the item to throw it." ) );
         return;
     }
 
-    item thrown = you.i_at( pos );
-    int range = you.throw_range( thrown );
+    int range = you.throw_range( *loc );
     if( range < 0 ) {
         add_msg( m_info, _( "You don't have that item." ) );
         return;
@@ -805,8 +799,8 @@ void avatar_action::plthrow( avatar &you, int pos,
         add_msg( m_info, _( "That is too heavy to throw." ) );
         return;
     }
-
-    if( pos == -1 && thrown.has_flag( "NO_UNWIELD" ) ) {
+    const bool wielded = you.is_wielding( *loc );
+    if( wielded && loc->has_flag( "NO_UNWIELD" ) ) {
         // pos == -1 is the weapon, NO_UNWIELD is used for bio_claws_weapon
         add_msg( m_info, _( "That's part of your body, you can't throw that!" ) );
         return;
@@ -830,14 +824,14 @@ void avatar_action::plthrow( avatar &you, int pos,
         }
     }
     // you must wield the item to throw it
-    if( pos != -1 ) {
-        you.i_rem( pos );
-        if( !you.wield( thrown ) ) {
+    if( !wielded ) {
+        you.i_rem( &*loc );
+        if( !you.wield( *loc ) ) {
             // We have to remove the item before checking for wield because it
             // can invalidate our pos index.  Which means we have to add it
             // back if the player changed their mind about unwielding their
             // current item
-            you.i_add( thrown );
+            you.i_add( *loc );
             return;
         }
     }
@@ -857,7 +851,7 @@ void avatar_action::plthrow( avatar &you, int pos,
     const target_mode throwing_target_mode = blind_throw_from_pos ? TARGET_MODE_THROW_BLIND :
             TARGET_MODE_THROW;
     // target_ui() sets x and y, or returns empty vector if we canceled (by pressing Esc)
-    std::vector<tripoint> trajectory = target_handler().target_ui( you, throwing_target_mode, &thrown,
+    std::vector<tripoint> trajectory = target_handler().target_ui( you, throwing_target_mode, &*loc,
                                        range );
 
     // If we previously shifted our position, put ourselves back now that we've picked our target.
@@ -869,12 +863,12 @@ void avatar_action::plthrow( avatar &you, int pos,
         return;
     }
 
-    if( thrown.count_by_charges() && thrown.charges > 1 ) {
+    if( loc->count_by_charges() && loc->charges > 1 ) {
         you.i_at( -1 ).charges--;
-        thrown.charges = 1;
+        loc->charges = 1;
     } else {
         you.i_rem( -1 );
     }
-    you.throw_item( trajectory.back(), thrown, blind_throw_from_pos );
+    you.throw_item( trajectory.back(), *loc, blind_throw_from_pos );
     g->reenter_fullscreen();
 }
