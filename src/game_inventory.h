@@ -51,6 +51,8 @@ namespace inv
 */
 /*@{*/
 
+void container( avatar &you );
+void open_contents( avatar &you, item_location &container );
 void common( avatar &you );
 void compare( player &p, const cata::optional<tripoint> &offset );
 void reassign_letter( player &p, item &it );

@@ -435,6 +435,7 @@ class inventory_selector
         ~inventory_selector();
         /** These functions add items from map / vehicles. */
         void add_character_items( Character &character );
+        void add_contained_items( item_location &container );
         void add_map_items( const tripoint &target );
         void add_vehicle_items( const tripoint &target );
         void add_nearby_items( int radius = 1 );

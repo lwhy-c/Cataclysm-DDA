@@ -1105,6 +1105,18 @@ void inventory_selector::add_character_items( Character &character )
     }
 }
 
+void inventory_selector::add_contained_items( item_location &container )
+{
+    if ( container->contents.empty() ) {
+        return;
+    }
+
+    for ( item &contained : container->contents )
+    {
+        add_item( own_inv_column, item_location( container, pocket_id( -1 ), &contained ) );
+    }
+}
+
 void inventory_selector::add_map_items( const tripoint &target )
 {
     if( g->m.accessible_items( target ) ) {

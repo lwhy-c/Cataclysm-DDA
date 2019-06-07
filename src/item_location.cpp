@@ -495,7 +495,7 @@ class item_location::impl::item_in_container : public item_location::impl
         void serialize( JsonOut &js ) const override {
             js.start_object();
             js.member( "type", "location" );
-            js.member( "idx", find_index( parent, target() ) );
+            js.member( "idx", find_index( *parent, target() ) );
             js.end_object();
         }
 
@@ -504,7 +504,7 @@ class item_location::impl::item_in_container : public item_location::impl
         }
 
         item *unpack( int idx ) const override {
-            return retrieve_index( parent, idx );
+            return retrieve_index( *parent, idx );
         }
 
         tripoint position() {
@@ -540,7 +540,6 @@ class item_location::impl::item_in_container : public item_location::impl
                 obtain_cost += parent.obtain_cost( ch, qty );
             }
             return obtain_cost;
-
         }
 
         // I don't know what this does. However, this needed an override, and this return seemed as good as any.
