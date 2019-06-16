@@ -511,7 +511,7 @@ class item_location::impl::item_in_container : public item_location::impl
             return parent.position();
         }
 
-        int obtain( Character &ch, long qty ) override {
+        int obtain( Character &ch, int qty ) override {
             ch.moves -= obtain_cost( ch, qty );
 
             item obj = target()->split( qty );
@@ -524,7 +524,7 @@ class item_location::impl::item_in_container : public item_location::impl
             }
         }
 
-        int obtain_cost( const Character &ch, long qty ) const override {
+        int obtain_cost( const Character &ch, int qty ) const override {
             if( !target() ) {
                 return 0;
             }
