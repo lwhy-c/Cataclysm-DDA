@@ -8661,6 +8661,44 @@ bool player::takeoff( int pos )
     return takeoff( i_at( pos ) );
 }
 
+void player::drop( item_location loc, const tripoint &where )
+{
+    std::list<std::pair<item_location, int>> temp_list;
+    temp_list.emplace_back( loc.clone(), loc->count() );
+    drop( temp_list, where );
+}
+
+void player::drop( const std::list<std::pair<item_location, int>> &what, const tripoint &target,
+                   bool stash )
+{
+    const activity_id type( stash ? "ACT_STASH" : "ACT_DROP" );
+
+    if( what.empty() ) {
+        return;
+    }
+
+    if( rl_dist( pos(), target ) > 1 || !( stash || g->m.can_put_items( target ) ) ) {
+        add_msg_player_or_npc( m_info, _( "You can't place items here!" ),
+                               _( "<npcname> can't place items here!" ) );
+        return;
+    }
+
+    assign_activity( type );
+    activity.placement = target - pos();
+
+    for( const std::pair<item_location, int> &item_pair : what ) {
+        if( can_unwield( *item_pair.first ).success() ) {
+            // item_location ACT
+            activity.targets.push_back( item_pair.first.clone() );
+            activity.values.push_back( item_pair.second );
+        }
+    }
+    // TODO: Remove the hack. Its here because npcs don't process activities
+    if( is_npc() ) {
+        activity.do_turn( *this );
+    }
+}
+
 bool player::add_or_drop_with_msg( item &it, const bool unloading )
 {
     if( it.made_of( LIQUID ) ) {

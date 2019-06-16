@@ -71,44 +71,6 @@ struct act_item {
 // TODO: Deliberately unified with multidrop. Unify further.
 using drop_indexes = std::list<std::pair<int, int>>;
 
-void player::drop( item_location loc, const tripoint &where )
-{
-    std::list<std::pair<item_location, int>> temp_list;
-    temp_list.emplace_back( loc.clone(), loc->count() );
-    drop( temp_list, where );
-}
-
-void player::drop( const std::list<std::pair<item_location, int>> &what, const tripoint &target,
-                   bool stash )
-{
-    const activity_id type( stash ? "ACT_STASH" : "ACT_DROP" );
-
-    if( what.empty() ) {
-        return;
-    }
-
-    if( rl_dist( pos(), target ) > 1 || !( stash || g->m.can_put_items( target ) ) ) {
-        add_msg_player_or_npc( m_info, _( "You can't place items here!" ),
-                               _( "<npcname> can't place items here!" ) );
-        return;
-    }
-
-    assign_activity( type );
-    activity.placement = target - pos();
-
-    for( const std::pair<item_location, int> &item_pair : what ) {
-        if( can_unwield( *item_pair.first ).success() ) {
-            // item_location ACT
-            activity.targets.push_back( item_pair.first.clone() );
-            activity.values.push_back( item_pair.second );
-        }
-    }
-    // TODO: Remove the hack. Its here because npcs don't process activities
-    if( is_npc() ) {
-        activity.do_turn( *this );
-    }
-}
-
 static bool same_type( const std::list<item> &items )
 {
     return std::all_of( items.begin(), items.end(), [ &items ]( const item & it ) {
@@ -392,16 +354,15 @@ static drop_indexes convert_to_indexes( const player &p, const std::list<act_ite
 // Prepares items for dropping by reordering them so that the drop
 // cost is minimal and "dependent" items get taken off first.
 // Implements the "backpack" logic.
-static std::list<act_item> reorder_for_dropping( const player &p, player_activity &act )
+static std::list<act_item> reorder_for_dropping( const player &p, const player_activity &act )
 {
     std::list<act_item> res;
     std::list<act_item> inv;
     std::list<act_item> worn;
 
-    for( item_location &loc : act.targets ) {
+    for( const item_location &loc : act.targets ) {
         const int qty = loc->count_by_charges() ? std::min<int>( loc->charges, loc->count() ) : 1;
-        const int cost = loc.obtain_cost( p );
-        act_item it( loc, qty, cost );
+        act_item it( const_cast<item_location &>( loc ), qty, loc.obtain_cost( p ) );
         if( p.is_wielding( *loc ) ) {
             res.emplace_back( it );
         } else if( p.is_worn( *loc ) ) {
