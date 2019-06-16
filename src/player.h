@@ -1053,8 +1053,8 @@ class player : public Character
         bool takeoff( item &it, std::list<item> *res = nullptr );
         bool takeoff( int pos );
         /** Drops an item to the specified location */
-        void drop( item_location &loc, const tripoint &where );
-        void drop( const std::list<std::pair<item_location &, int>> &what, const tripoint &where,
+        void drop( item_location loc, const tripoint &where );
+        void drop( const std::list<std::pair<item_location, int>> &what, const tripoint &where,
                    bool stash = false );
 
         /** So far only called by unload() from game.cpp */

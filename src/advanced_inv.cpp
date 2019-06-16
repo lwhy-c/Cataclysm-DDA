@@ -1335,11 +1335,11 @@ bool advanced_inventory::move_all_items( bool nested_call )
     }
 
     if( spane.get_area() == AIM_INVENTORY || spane.get_area() == AIM_WORN ) {
-        std::list<std::pair<item_location &, int>> dropped;
+        std::list<std::pair<item_location, int>> dropped;
 
         if( spane.get_area() == AIM_INVENTORY ) {
             // keep a list of favorites separated, only drop non-fav first if they exist
-            std::list<std::pair<item_location &, int>> dropped_favorite;
+            std::list<std::pair<item_location, int>> dropped_favorite;
             for( size_t index = 0; index < g->u.inv.size(); ++index ) {
                 const std::list<item> &stack = g->u.inv.const_stack( index );
                 const item &it = stack.front();
@@ -1354,7 +1354,11 @@ bool advanced_inventory::move_all_items( bool nested_call )
                 if( !query_yn( _( "Really drop all your favorite items?" ) ) ) {
                     return false;
                 }
-                dropped = dropped_favorite;
+                dropped.clear();
+                for ( const std::pair<item_location, int> &pair : dropped_favorite )
+                {
+                    dropped.emplace_back( std::make_pair( pair.first.clone(), pair.second ) );
+                }
             }
         } else if( spane.get_area() == AIM_WORN ) {
             // do this in reverse, to account for vector item removal messing with future indices

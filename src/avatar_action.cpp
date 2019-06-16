@@ -816,8 +816,8 @@ void avatar_action::plthrow( avatar &you, item_location &loc,
         }
     }
     // if you're wearing the item you need to be able to take it off
-    if( pos < -1 ) {
-        auto ret = you.can_takeoff( you.i_at( pos ) );
+    if( you.is_worn( *loc ) ) {
+        auto ret = you.can_takeoff( *loc );
         if( !ret.success() ) {
             add_msg( m_info, "%s", ret.c_str() );
             return;

@@ -333,20 +333,6 @@ void put_into_vehicle_or_drop( Character &c, item_drop_reason reason, const std:
     drop_on_map( c, reason, items, where );
 }
 
-static drop_indexes convert_to_indexes( const player_activity &act )
-{
-    drop_indexes res;
-
-    if( act.values.size() % 2 != 0 ) {
-        debugmsg( "Drop/stash activity contains an odd number of values." );
-        return res;
-    }
-    for( auto iter = act.values.begin(); iter != act.values.end(); iter += 2 ) {
-        res.emplace_back( *iter, *std::next( iter ) );
-    }
-    return res;
-}
-
 static drop_indexes convert_to_indexes( const player &p, const std::list<act_item> &items )
 {
     drop_indexes res;
@@ -365,37 +351,6 @@ static drop_indexes convert_to_indexes( const player &p, const std::list<act_ite
     return res;
 }
 
-static std::list<act_item> convert_to_items( const player &p, const drop_indexes &drop,
-        int min_pos, int max_pos )
-{
-    std::list<act_item> res;
-
-    for( const std::pair<int, int> &rec : drop ) {
-        const int pos = rec.first;
-        const int count = rec.second;
-
-        if( pos < min_pos || pos > max_pos ) {
-            continue;
-        } else if( pos >= 0 ) {
-            int obtained = 0;
-            for( const item &it : p.inv.const_stack( pos ) ) {
-                if( obtained >= count ) {
-                    break;
-                }
-                const int qty = it.count_by_charges() ? std::min<int>( it.charges, count - obtained ) : 1;
-                obtained += qty;
-                item_location loc( const_cast<player &>( p ), const_cast<item *>( &it ) );
-                res.emplace_back( loc, qty, 100 ); // TODO: Use a calculated cost
-            }
-        } else {
-            item_location loc( const_cast<player &>( p ), const_cast<item *>( &p.i_at( pos ) ) );
-            res.emplace_back( loc, count, pos == -1 ? 0 : 100 ); // TODO: Use a calculated cost
-        }
-    }
-
-    return res;
-}
-
 // Prepares items for dropping by reordering them so that the drop
 // cost is minimal and "dependent" items get taken off first.
 // Implements the "backpack" logic.
@@ -409,9 +364,9 @@ static std::list<act_item> reorder_for_dropping( const player &p, const player_a
         const int qty = loc->count_by_charges() ? std::min<int>( loc->charges, loc->count() ) : 1;
         act_item it( const_cast<item_location &>( loc ), qty, loc.obtain_cost( p ) );
         if( p.is_wielding( *loc ) ) {
-        res.emplace_back( it );
+            res.emplace_back( it );
         } else if( p.is_worn( *loc ) ) {
-        worn.emplace_back( it );
+            worn.emplace_back( it );
         } else {
             inv.emplace_back( it );
         }

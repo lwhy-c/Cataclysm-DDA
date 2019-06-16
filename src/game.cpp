@@ -2068,7 +2068,7 @@ int game::inventory_item_menu( item_location &loc, int iStartX, int iWidth,
                     u.takeoff( *loc );
                     break;
                 case 'd':
-                    u.drop( loc, u.pos() );
+                    u.drop( loc.clone(), u.pos() );
                     break;
                 case 'U':
                     unload( *loc );
@@ -4974,8 +4974,7 @@ static void update_lum( item_location loc, bool add )
 
 void game::use_item( item_location &loc )
 {
-    if ( !loc )
-    {
+    if( !loc ) {
         // we can't use a null item!
         return;
     }
@@ -5600,8 +5599,8 @@ void game::peek( const tripoint &p )
     u.setpos( prev );
 
     if( result.peek_action && *result.peek_action == PA_BLIND_THROW ) {
-        avatar_action::plthrow( u, game_menus::inv::inv_for_all( u, _( "Throw Item" ),
-                                _( "You don't have anything to throw." ) ), p );
+        item_location loc = game_menus::inv::inv_for_all( u, _( "Throw Item" ), _( "You don't have anything to throw." ) );
+        avatar_action::plthrow( u, loc, p );
     }
     m.invalidate_map_cache( p.z );
 
@@ -8148,7 +8147,8 @@ void game::butcher()
         case BUTCHER_DISASSEMBLE: {
             // Pick index of first item in the disassembly stack
             const size_t index = disassembly_stacks[indexer_index].first;
-            u.disassemble( item_location( map_cursor( u.pos() ), &items[index] ) );
+            item_location loc( map_cursor( u.pos() ), &items[index] );
+            u.disassemble( loc );
         }
         break;
         case BUTCHER_SALVAGE: {

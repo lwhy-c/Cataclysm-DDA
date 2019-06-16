@@ -5618,8 +5618,7 @@ void player::suffer()
                         str[0] = toupper( str[0] );
 
                         add_msg( m_bad, str );
-                        item_location loc( *this, &weapon );
-                        drop( loc, pos() );
+                        drop( item_location( *this, &weapon ), pos() );
                     }
                     // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
                     done_effect = true;
@@ -8631,8 +8630,7 @@ bool player::takeoff( item &it, std::list<item> *res )
         if( volume_carried() + it.volume() > volume_capacity_reduced_by( it.get_storage() ) ) {
             if( is_npc() || query_yn( _( "No room in inventory for your %s.  Drop it?" ),
                                       colorize( it.tname(), it.color_in_inventory() ) ) ) {
-                item_location loc( *this, &it );
-                drop( *&loc, pos() );
+                drop( item_location( *this, &it ), pos() );
                 return true; // the drop activity ends up taking off the item anyway so shouldn't try to do it again here
             } else {
                 return false;
@@ -8663,15 +8661,14 @@ bool player::takeoff( int pos )
     return takeoff( i_at( pos ) );
 }
 
-void player::drop( item_location &loc, const tripoint &where )
+void player::drop( item_location loc, const tripoint &where )
 {
-    std::list<std::pair<item_location &, int>> temp_list = {
-        { loc, loc->count() }
-    };
+    std::list<std::pair<item_location, int>> temp_list;
+    temp_list.emplace_back( loc.clone(), loc->count() );
     drop( temp_list, where );
 }
 
-void player::drop( const std::list<std::pair<item_location &, int>> &what, const tripoint &target,
+void player::drop( const std::list<std::pair<item_location, int>> &what, const tripoint &target,
                    bool stash )
 {
     const activity_id type( stash ? "ACT_STASH" : "ACT_DROP" );
@@ -8689,7 +8686,7 @@ void player::drop( const std::list<std::pair<item_location &, int>> &what, const
     assign_activity( type );
     activity.placement = target - pos();
 
-    for( const std::pair<item_location &, int> &item_pair : what ) {
+    for( const std::pair<item_location, int> &item_pair : what ) {
         if( can_unwield( *item_pair.first ).success() ) {
             // item_location ACT
             activity.targets.push_back( item_pair.first.clone() );

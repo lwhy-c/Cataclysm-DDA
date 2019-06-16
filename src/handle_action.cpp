@@ -1762,12 +1762,13 @@ bool game::handle_action()
                 game_menus::inv::swap_letters( u );
                 break;
 
-            case ACTION_USE:
+            case ACTION_USE: {
                 // Shell-users are presumed to be able to mess with their inventories, etc
                 // while in the shell.  Eating, gear-changing, and item use are OK.
-                use_item( game_menus::inv::inv_for_all( u, "Use Item" ) );
+                item_location loc = game_menus::inv::inv_for_all( u, "Use Item" );
+                use_item( loc );
                 break;
-
+            }
             case ACTION_USE_WIELDED:
                 u.use_wielded();
                 break;
@@ -1817,10 +1818,11 @@ bool game::handle_action()
                 u.mend_item( game_menus::inv::inv_for_all( u, _( "Mend Item" ) ) );
                 break;
 
-            case ACTION_THROW:
-                avatar_action::plthrow( g->u, game_menus::inv::inv_for_all( g->u, _( "Throw Item" ) ) );
+            case ACTION_THROW: {
+                item_location loc = game_menus::inv::inv_for_all( g->u, _( "Throw Item" ) );
+                avatar_action::plthrow( g->u, loc );
                 break;
-
+            }
             case ACTION_FIRE:
                 fire();
                 break;
