@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <queue>
 #include <utility>
 
 #include "units.h"
@@ -146,4 +147,35 @@ class stomach_contents
         // returns true if any vitamins are absorbed
         bool absorb_vitamins( const std::map<vitamin_id, int> &vitamins );
 
+};
+
+class calorie_info {
+    private:
+        std::queue<int> buckets_30_min;
+        // a rolling sum of the past 24 hours
+        int sum_day;
+        std::queue<int> buckets_daily;
+        // a rolling sum of the past month (30 days)
+        int sum_month;
+    public:
+        // adds some caloriesto the front of the queue.
+        // subtracts if negative
+        void add_calories( int cal ) {
+            buckets_30_min.front() += cal;
+            sum_day += cal;
+        }
+        // Called once every 30 min
+        void rotate_buckets() {
+            buckets_daily.front() += buckets_30_min.back();
+            sum_day -= buckets_30_min.front();
+            sum_month += buckets_30_min.front();
+            buckets_30_min.pop();
+            buckets_30_min.push( 0 );
+        }
+        // called once a day
+        void rotate_buckets_daily() {
+            sum_month -= buckets_daily.front();
+            buckets_daily.pop();
+            buckets_daily.push( 0 );
+        }
 };
