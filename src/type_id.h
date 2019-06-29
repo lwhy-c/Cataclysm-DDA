@@ -37,6 +37,9 @@ using gun_mode_id = string_id<gun_mode>;
 class harvest_list;
 using harvest_id = string_id<harvest_list>;
 
+class limb_type;
+using limb_id = string_id<limb_type>;
+
 class ma_buff;
 using mabuff_id = string_id<ma_buff>;
 
