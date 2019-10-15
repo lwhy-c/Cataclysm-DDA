@@ -9,7 +9,6 @@
 #include "event_bus.h"
 #include "field.h"
 #include "game.h"
-#include "character.h"
 #include "character_mutations.h"
 #include "item.h"
 #include "itype.h"
@@ -103,7 +102,7 @@ bool character_mutations::has_base_trait( const trait_id &b ) const
     return my_traits.find( b ) != my_traits.end();
 }
 
-void character_mutations::toggle_trait( Character &owner, const trait_id &flag )
+void character_mutations::toggle_trait( const trait_id &flag )
 {
     const auto titer = my_traits.find( flag );
     if( titer == my_traits.end() ) {
@@ -113,15 +112,15 @@ void character_mutations::toggle_trait( Character &owner, const trait_id &flag )
     }
     const auto miter = my_mutations.find( flag );
     if( miter == my_mutations.end() ) {
-        set_mutation( owner, flag );
-        mutation_effect( owner, flag );
+        set_mutation( flag );
+        mutation_effect( flag );
     } else {
-        unset_mutation( owner, flag );
-        mutation_loss_effect( owner, flag );
+        unset_mutation( flag );
+        mutation_loss_effect( flag );
     }
 }
 
-void character_mutations::set_mutation( Character &owner, const trait_id &flag )
+void character_mutations::set_mutation( const trait_id &flag )
 {
     const auto iter = my_mutations.find( flag );
     if( iter == my_mutations.end() ) {
@@ -130,11 +129,11 @@ void character_mutations::set_mutation( Character &owner, const trait_id &flag )
     } else {
         return;
     }
-    owner.recalc_sight_limits();
-    owner.reset_encumbrance();
+    recalc_sight_limits();
+    reset_encumbrance();
 }
 
-void character_mutations::unset_mutation( Character &owner, const trait_id &flag )
+void character_mutations::unset_mutation( const trait_id &flag )
 {
     const auto iter = my_mutations.find( flag );
     if( iter != my_mutations.end() ) {
@@ -145,8 +144,8 @@ void character_mutations::unset_mutation( Character &owner, const trait_id &flag
     } else {
         return;
     }
-    owner.recalc_sight_limits();
-    owner.reset_encumbrance();
+    recalc_sight_limits();
+    reset_encumbrance();
 }
 
 int character_mutations::get_mod( const trait_id &mut, const std::string &arg ) const
@@ -200,46 +199,46 @@ const resistances &mutation_branch::damage_resistance( body_part bp ) const
     return iter->second;
 }
 
-void character_mutations::mutation_effect( Character &owner, const trait_id &mut )
+void character_mutations::mutation_effect( const trait_id &mut )
 {
     if( mut == "GLASSJAW" ) {
-        owner.recalc_hp();
+        recalc_hp();
 
     } else if( mut == trait_STR_ALPHA ) {
-        if( owner.str_max < 16 ) {
-            owner.str_max = 8 + owner.str_max / 2;
+        if( str_max < 16 ) {
+            str_max = 8 + str_max / 2;
         }
-        owner.apply_mods( mut, true );
-        owner.recalc_hp();
+        apply_mods( mut, true );
+        recalc_hp();
     } else if( mut == trait_DEX_ALPHA ) {
-        if( owner.dex_max < 16 ) {
-            owner.dex_max = 8 + owner.dex_max / 2;
+        if( dex_max < 16 ) {
+            dex_max = 8 + dex_max / 2;
         }
-        owner.apply_mods( mut, true );
+        apply_mods( mut, true );
     } else if( mut == trait_INT_ALPHA ) {
-        if( owner.int_max < 16 ) {
-            owner.int_max = 8 + owner.int_max / 2;
+        if( int_max < 16 ) {
+            int_max = 8 + int_max / 2;
         }
-        owner.apply_mods( mut, true );
+        apply_mods( mut, true );
     } else if( mut == trait_INT_SLIME ) {
-        owner.int_max *= 2; // Now, can you keep it? :-)
+        int_max *= 2; // Now, can you keep it? :-)
 
     } else if( mut == trait_PER_ALPHA ) {
-        if( owner.per_max < 16 ) {
-            owner.per_max = 8 + owner.per_max / 2;
+        if( per_max < 16 ) {
+            per_max = 8 + per_max / 2;
         }
-        owner.apply_mods( mut, true );
+        apply_mods( mut, true );
     } else {
-        owner.apply_mods( mut, true );
+        apply_mods( mut, true );
     }
 
     const auto &branch = mut.obj();
     if( branch.hp_modifier != 0.0f || branch.hp_modifier_secondary != 0.0f ||
         branch.hp_adjustment != 0.0f ) {
-        owner.recalc_hp();
+        recalc_hp();
     }
 
-    owner.remove_worn_items_with( [&]( item & armor ) {
+    remove_worn_items_with( [&]( item & armor ) {
         static const std::string mutation_safe = "OVERSIZE";
         if( armor.has_flag( mutation_safe ) ) {
             return false;
@@ -248,19 +247,19 @@ void character_mutations::mutation_effect( Character &owner, const trait_id &mut
             return false;
         }
         if( branch.destroys_gear ) {
-            owner.add_msg_player_or_npc( m_bad,
+            add_msg_player_or_npc( m_bad,
                                    _( "Your %s is destroyed!" ),
                                    _( "<npcname>'s %s is destroyed!" ),
                                    armor.tname() );
             for( item &remain : armor.contents ) {
-                g->m.add_item_or_charges( owner.pos(), remain );
+                g->m.add_item_or_charges( pos(), remain );
             }
         } else {
-            owner.add_msg_player_or_npc( m_bad,
+            add_msg_player_or_npc( m_bad,
                                    _( "Your %s is pushed off!" ),
                                    _( "<npcname>'s %s is pushed off!" ),
                                    armor.tname() );
-            g->m.add_item_or_charges( owner.pos(), armor );
+            g->m.add_item_or_charges( pos(), armor );
         }
         return true;
     } );
@@ -269,49 +268,49 @@ void character_mutations::mutation_effect( Character &owner, const trait_id &mut
         my_mutations[mut].powered = true;
     }
 
-    owner.on_mutation_gain( mut );
+    on_mutation_gain( mut );
 }
 
-void character_mutations::mutation_loss_effect( Character &owner, const trait_id &mut )
+void character_mutations::mutation_loss_effect( const trait_id &mut )
 {
     if( mut == "GLASSJAW" ) {
-        owner.recalc_hp();
+        recalc_hp();
 
     } else if( mut == trait_STR_ALPHA ) {
-        owner.apply_mods( mut, false );
-        if( owner.str_max < 16 ) {
-            owner.str_max = 2 * ( owner.str_max - 8 );
+        apply_mods( mut, false );
+        if( str_max < 16 ) {
+            str_max = 2 * ( str_max - 8 );
         }
-        owner.recalc_hp();
+        recalc_hp();
     } else if( mut == trait_DEX_ALPHA ) {
-        owner.apply_mods( mut, false );
-        if( owner.dex_max < 16 ) {
-            owner.dex_max = 2 * ( owner.dex_max - 8 );
+        apply_mods( mut, false );
+        if( dex_max < 16 ) {
+            dex_max = 2 * ( dex_max - 8 );
         }
     } else if( mut == trait_INT_ALPHA ) {
-        owner.apply_mods( mut, false );
-        if( owner.int_max < 16 ) {
-            owner.int_max = 2 * ( owner.int_max - 8 );
+        apply_mods( mut, false );
+        if( int_max < 16 ) {
+            int_max = 2 * ( int_max - 8 );
         }
     } else if( mut == trait_INT_SLIME ) {
-        owner.int_max /= 2; // In case you have a freak accident with the debug menu ;-)
+        int_max /= 2; // In case you have a freak accident with the debug menu ;-)
 
     } else if( mut == trait_PER_ALPHA ) {
-        owner.apply_mods( mut, false );
-        if( owner.per_max < 16 ) {
-            owner.per_max = 2 * ( owner.per_max - 8 );
+        apply_mods( mut, false );
+        if( per_max < 16 ) {
+            per_max = 2 * ( per_max - 8 );
         }
     } else {
-        owner.apply_mods( mut, false );
+        apply_mods( mut, false );
     }
 
     const auto &branch = mut.obj();
     if( branch.hp_modifier != 0.0f || branch.hp_modifier_secondary != 0.0f ||
         branch.hp_adjustment != 0.0f ) {
-        owner.recalc_hp();
+        recalc_hp();
     }
 
-    owner.on_mutation_loss( mut );
+    on_mutation_loss( mut );
 }
 
 bool character_mutations::has_active_mutation( const trait_id &b ) const
@@ -420,7 +419,7 @@ bool Character::can_install_cbm_on_bp( const std::vector<body_part> &bps ) const
 void player::activate_mutation( const trait_id &mut )
 {
     const mutation_branch &mdata = mut.obj();
-    character_mutations::trait_data &tdata = mutations.get_trait_data( mut );
+    const character_mutations::trait_data &tdata = mutations.get_trait_data( mut );
     int cost = mdata.cost;
     // Preserve the fake weapon used to initiate ranged mutation firing
     static item mut_ranged( weapon );
@@ -530,7 +529,7 @@ void player::activate_mutation( const trait_id &mut )
             return;
         }
 
-        if( mutations.has_trait( trait_ROOTS2 ) || mutations.has_trait( trait_ROOTS3 ) ) {
+        if( mutations.has_trait( trait_ROOTS2 ) || mutationshas_trait( trait_ROOTS3 ) ) {
             add_msg_if_player( _( "You reach out to the trees with your roots." ) );
         } else {
             add_msg_if_player(
@@ -539,8 +538,8 @@ void player::activate_mutation( const trait_id &mut )
 
         assign_activity( activity_id( "ACT_TREE_COMMUNION" ) );
 
-        if( mutations.has_trait( trait_ROOTS2 ) || mutations.has_trait( trait_ROOTS3 ) ) {
-            const time_duration startup_time = mutations.has_trait( trait_ROOTS3 ) ? rng( 15_minutes,
+        if( has_trait( trait_ROOTS2 ) || has_trait( trait_ROOTS3 ) ) {
+            const time_duration startup_time = has_trait( trait_ROOTS3 ) ? rng( 15_minutes,
                                                30_minutes ) : rng( 60_minutes, 90_minutes );
             activity.values.push_back( to_turns<int>( startup_time ) );
             return;
@@ -570,9 +569,9 @@ void player::activate_mutation( const trait_id &mut )
     }
 }
 
-void Character::deactivate_mutation( const trait_id &mut )
+void player::deactivate_mutation( const trait_id &mut )
 {
-    mutations.get_trait_data( mut ).powered = false;
+    my_mutations[mut].powered = false;
 
     // Handle stat changes from deactivation
     apply_mods( mut, false );
@@ -616,7 +615,7 @@ bool character_mutations::mutation_ok( const trait_id &mutation, bool force_good
     return true;
 }
 
-void character_mutations::mutate( Character &owner )
+void character_mutations::mutate()
 {
     bool force_bad = one_in( 3 );
     bool force_good = false;
@@ -706,7 +705,7 @@ void character_mutations::mutate( Character &owner )
             size_t roll = rng( 0, upgrades.size() + 4 );
             if( roll < upgrades.size() ) {
                 // We got a valid upgrade index, so use it and return.
-                mutate_towards( owner, upgrades[roll] );
+                mutate_towards( upgrades[roll] );
                 return;
             }
         }
@@ -715,7 +714,7 @@ void character_mutations::mutate( Character &owner )
         if( !downgrades.empty() && !cat.empty() ) {
             size_t roll = rng( 0, downgrades.size() + 4 );
             if( roll < downgrades.size() ) {
-                remove_mutation( owner, downgrades[roll] );
+                remove_mutation( downgrades[roll] );
                 return;
             }
         }
@@ -765,20 +764,20 @@ void character_mutations::mutate( Character &owner )
         return;
     }
 
-    if( mutate_towards( owner, random_entry( valid ) ) ) {
+    if( mutate_towards( random_entry( valid ) ) ) {
         return;
     } else {
         // if mutation failed (errors, post-threshold pick), try again once.
-        mutate_towards( owner, random_entry( valid ) );
+        mutate_towards( random_entry( valid ) );
     }
 }
 
-void character_mutations::mutate_category( Character &owner, const std::string &cat )
+void character_mutations::mutate_category( const std::string &cat )
 {
     // Hacky ID comparison is better than separate hardcoded branch used before
     // TODO: Turn it into the null id
     if( cat == "ANY" ) {
-        mutate( owner );
+        mutate();
         return;
     }
 
@@ -803,7 +802,7 @@ void character_mutations::mutate_category( Character &owner, const std::string &
         }
     }
 
-    mutate_towards( owner, valid, 2 );
+    mutate_towards( valid, 2 );
 }
 
 static std::vector<trait_id> get_all_mutation_prereqs( const trait_id &id )
@@ -822,12 +821,12 @@ static std::vector<trait_id> get_all_mutation_prereqs( const trait_id &id )
     return ret;
 }
 
-bool character_mutations::mutate_towards( Character &owner, std::vector<trait_id> muts, int num_tries )
+bool character_mutations::mutate_towards( std::vector<trait_id> muts, int num_tries )
 {
     while( !muts.empty() && num_tries > 0 ) {
         int i = rng( 0, muts.size() - 1 );
 
-        if( mutate_towards( owner, muts[i] ) ) {
+        if( mutate_towards( muts[i] ) ) {
             return true;
         }
 
@@ -838,10 +837,10 @@ bool character_mutations::mutate_towards( Character &owner, std::vector<trait_id
     return false;
 }
 
-bool character_mutations::mutate_towards( Character &owner, const trait_id &mut )
+bool character_mutations::mutate_towards( const trait_id &mut )
 {
     if( has_child_flag( mut ) ) {
-        remove_child_flag( owner, mut );
+        remove_child_flag( mut );
         return true;
     }
     const mutation_branch &mdata = mut.obj();
@@ -878,12 +877,12 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
     for( size_t i = 0; i < cancel.size(); i++ ) {
         if( !cancel.empty() ) {
             trait_id removed = cancel[i];
-            remove_mutation( owner, removed );
+            remove_mutation( removed );
             cancel.erase( cancel.begin() + i );
             i--;
             // This checks for cases where one trait knocks out several others
             // Probably a better way, but gets it Fixed Now--KA101
-            return mutate_towards( owner, mut );
+            return mutate_towards( mut );
         }
     }
 
@@ -905,9 +904,9 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
 
     if( !has_prereqs && ( !prereq.empty() || !prereqs2.empty() ) ) {
         if( !prereq1 && !prereq.empty() ) {
-            return mutate_towards( owner, prereq );
+            return mutate_towards( prereq );
         } else if( !prereq2 && !prereqs2.empty() ) {
-            return mutate_towards( owner, prereqs2 );
+            return mutate_towards( prereqs2 );
         }
     }
 
@@ -920,7 +919,7 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
     // It shouldn't pick a Threshold anyway--they're supposed to be non-Valid
     // and aren't categorized. This can happen if someone makes a threshold mutation into a prerequisite.
     if( threshold ) {
-        owner.add_msg_if_player( _( "You feel something straining deep inside you, yearning to be free..." ) );
+        add_msg_if_player( _( "You feel something straining deep inside you, yearning to be free..." ) );
         return false;
     }
     if( profession ) {
@@ -936,7 +935,7 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
 
     // No crossing The Threshold by simply not having it
     if( !has_threshreq && !threshreq.empty() ) {
-        owner.add_msg_if_player( _( "You feel something straining deep inside you, yearning to be free..." ) );
+        add_msg_if_player( _( "You feel something straining deep inside you, yearning to be free..." ) );
         return false;
     }
 
@@ -970,7 +969,7 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
         }
     }
 
-    set_mutation( owner, mut );
+    set_mutation( mut );
 
     bool mutation_replaced = false;
 
@@ -990,15 +989,15 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
         //  TODO: Limit this to visible mutations
         // TODO: In case invisible mutation turns into visible or vice versa
         //  print only the visible mutation appearing/disappearing
-        owner.add_msg_player_or_npc( rating,
+        add_msg_player_or_npc( rating,
                                _( "Your %1$s mutation turns into %2$s!" ),
                                _( "<npcname>'s %1$s mutation turns into %2$s!" ),
                                replace_mdata.name(), mdata.name() );
 
-        g->events().send<event_type::evolves_mutation>( owner.getID(), replace_mdata.id, mdata.id );
-        unset_mutation( owner, replacing );
-        mutation_loss_effect( owner, replacing );
-        mutation_effect( owner, mut );
+        g->events().send<event_type::evolves_mutation>( getID(), replace_mdata.id, mdata.id );
+        unset_mutation( replacing );
+        mutation_loss_effect( replacing );
+        mutation_effect( mut );
         mutation_replaced = true;
     }
     if( replacing2 ) {
@@ -1012,14 +1011,14 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
         } else {
             rating = m_neutral;
         }
-        owner.add_msg_player_or_npc( rating,
+        add_msg_player_or_npc( rating,
                                _( "Your %1$s mutation turns into %2$s!" ),
                                _( "<npcname>'s %1$s mutation turns into %2$s!" ),
                                replace_mdata.name(), mdata.name() );
-        g->events().send<event_type::evolves_mutation>( owner.getID(), replace_mdata.id, mdata.id );
-        unset_mutation( owner, replacing2 );
-        mutation_loss_effect( owner, replacing2 );
-        mutation_effect( owner, mut );
+        g->events().send<event_type::evolves_mutation>( getID(), replace_mdata.id, mdata.id );
+        unset_mutation( replacing2 );
+        mutation_loss_effect( replacing2 );
+        mutation_effect( mut );
         mutation_replaced = true;
     }
     for( const auto &i : canceltrait ) {
@@ -1036,14 +1035,14 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
             rating = m_mixed;
         }
         // If this new mutation cancels a base trait, remove it and add the mutation at the same time
-        owner.add_msg_player_or_npc( rating,
+        add_msg_player_or_npc( rating,
                                _( "Your innate %1$s trait turns into %2$s!" ),
                                _( "<npcname>'s innate %1$s trait turns into %2$s!" ),
                                cancel_mdata.name(), mdata.name() );
-        g->events().send<event_type::evolves_mutation>( owner.getID(), cancel_mdata.id, mdata.id );
-        unset_mutation( owner, i );
-        mutation_loss_effect( owner, i );
-        mutation_effect( owner, mut );
+        g->events().send<event_type::evolves_mutation>( getID(), cancel_mdata.id, mdata.id );
+        unset_mutation( i );
+        mutation_loss_effect( i );
+        mutation_effect( mut );
         mutation_replaced = true;
     }
     if( !mutation_replaced ) {
@@ -1057,12 +1056,12 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
             rating = m_neutral;
         }
         // TODO: Limit to visible mutations
-        owner.add_msg_player_or_npc( rating,
+        add_msg_player_or_npc( rating,
                                _( "You gain a mutation called %s!" ),
                                _( "<npcname> gains a mutation called %s!" ),
                                mdata.name() );
-        g->events().send<event_type::gains_mutation>( owner.getID(), mdata.id );
-        mutation_effect( owner, mut );
+        g->events().send<event_type::gains_mutation>( getID(), mdata.id );
+        mutation_effect( mut );
     }
 
     set_highest_cat_level();
@@ -1070,7 +1069,7 @@ bool character_mutations::mutate_towards( Character &owner, const trait_id &mut 
     return true;
 }
 
-void character_mutations::remove_mutation( Character &owner, const trait_id &mut, bool silent )
+void character_mutations::remove_mutation( const trait_id &mut, bool silent )
 {
     const auto &mdata = mut.obj();
     // Check if there's a prerequisite we should shrink back into
@@ -1149,7 +1148,7 @@ void character_mutations::remove_mutation( Character &owner, const trait_id &mut
     }
 
     // This should revert back to a removed base trait rather than simply removing the mutation
-    unset_mutation( owner, mut );
+    unset_mutation( mut );
 
     bool mutation_replaced = false;
 
@@ -1167,14 +1166,14 @@ void character_mutations::remove_mutation( Character &owner, const trait_id &mut
             rating = m_neutral;
         }
         if( !silent ) {
-            owner.add_msg_player_or_npc( rating,
+            add_msg_player_or_npc( rating,
                                    _( "Your %1$s mutation turns into %2$s." ),
                                    _( "<npcname>'s %1$s mutation turns into %2$s." ),
                                    mdata.name(), replace_mdata.name() );
         }
-        set_mutation( owner, replacing );
-        mutation_loss_effect( owner, mut );
-        mutation_effect( owner, replacing );
+        set_mutation( replacing );
+        mutation_loss_effect( mut );
+        mutation_effect( replacing );
         mutation_replaced = true;
     }
     if( replacing2 ) {
@@ -1189,14 +1188,14 @@ void character_mutations::remove_mutation( Character &owner, const trait_id &mut
             rating = m_neutral;
         }
         if( !silent ) {
-            owner.add_msg_player_or_npc( rating,
+            add_msg_player_or_npc( rating,
                                    _( "Your %1$s mutation turns into %2$s." ),
                                    _( "<npcname>'s %1$s mutation turns into %2$s." ),
                                    mdata.name(), replace_mdata.name() );
         }
-        set_mutation( owner, replacing2 );
-        mutation_loss_effect( owner, mut );
-        mutation_effect( owner, replacing2 );
+        set_mutation( replacing2 );
+        mutation_loss_effect( mut );
+        mutation_effect( replacing2 );
         mutation_replaced = true;
     }
     if( !mutation_replaced ) {
@@ -1210,12 +1209,12 @@ void character_mutations::remove_mutation( Character &owner, const trait_id &mut
             rating = m_neutral;
         }
         if( !silent ) {
-            owner.add_msg_player_or_npc( rating,
+            add_msg_player_or_npc( rating,
                                    _( "You lose your %s mutation." ),
                                    _( "<npcname> loses their %s mutation." ),
                                    mdata.name() );
         }
-        mutation_loss_effect( owner, mut );
+        mutation_loss_effect( mut );
     }
 
     set_highest_cat_level();
@@ -1233,15 +1232,15 @@ bool character_mutations::has_child_flag( const trait_id &flag ) const
     return false;
 }
 
-void character_mutations::remove_child_flag( Character &owner, const trait_id &flag )
+void character_mutations::remove_child_flag( const trait_id &flag )
 {
     for( auto &elem : flag->replacements ) {
         const trait_id &tmp = elem;
         if( has_trait( tmp ) ) {
-            remove_mutation( owner, tmp );
+            remove_mutation( tmp );
             return;
         } else if( has_child_flag( tmp ) ) {
-            remove_child_flag( owner, tmp );
+            remove_child_flag( tmp );
             return;
         }
     }
@@ -1249,7 +1248,7 @@ void character_mutations::remove_child_flag( Character &owner, const trait_id &f
 
 static mutagen_rejection try_reject_mutagen( player &p, const item &it, bool strong )
 {
-    if( p.mutations.has_trait( trait_MUTAGEN_AVOID ) ) {
+    if( p.has_trait( trait_MUTAGEN_AVOID ) ) {
         p.add_msg_if_player( m_warning,
                              //~ "Uh-uh" is a sound used for "nope", "no", etc.
                              _( "After what happened that last time?  uh-uh.  You're not drinking that chemical stuff." ) );
@@ -1266,7 +1265,7 @@ static mutagen_rejection try_reject_mutagen( player &p, const item &it, bool str
         return mutagen_rejection::accepted;
     }
 
-    if( p.mutations.has_trait( trait_THRESH_MYCUS ) ) {
+    if( p.has_trait( trait_THRESH_MYCUS ) ) {
         p.add_msg_if_player( m_info, _( "This is a contaminant.  We reject it from the Mycus." ) );
         if( p.has_trait( trait_M_SPORES ) || p.has_trait( trait_M_FERTILE ) ||
             p.has_trait( trait_M_BLOSSOMS ) || p.has_trait( trait_M_BLOOM ) ) {
