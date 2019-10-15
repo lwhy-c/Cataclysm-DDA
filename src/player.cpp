@@ -4645,12 +4645,12 @@ void player::suffer()
         }
     }
 
-    for( const trait_id &mut : mutations.get_mutations() ) {
-        character_mutations::trait_data &tdata = mutations.get_trait_data( mut );
+    for( auto &mut : my_mutations ) {
+        auto &tdata = mut.second;
         if( !tdata.powered ) {
             continue;
         }
-        const mutation_branch &mdata = mut.obj();
+        const auto &mdata = mut.first.obj();
         if( tdata.powered && tdata.charge > 0 ) {
             // Already-on units just lose a bit of charge
             tdata.charge--;
@@ -4684,7 +4684,7 @@ void player::suffer()
             }
 
             if( !tdata.powered ) {
-                apply_mods( mut, false );
+                apply_mods( mut.first, false );
             }
         }
     }
