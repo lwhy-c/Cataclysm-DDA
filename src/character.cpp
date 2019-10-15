@@ -201,16 +201,16 @@ character_id Character::getID() const
 
 field_type_id Character::bloodType() const
 {
-    if( mutations.has_trait( trait_ACIDBLOOD ) ) {
+    if( has_trait( trait_ACIDBLOOD ) ) {
         return fd_acid;
     }
-    if( mutations.has_trait( trait_THRESH_PLANT ) ) {
+    if( has_trait( trait_THRESH_PLANT ) ) {
         return fd_blood_veggy;
     }
-    if( mutations.has_trait( trait_THRESH_INSECT ) || mutations.has_trait( trait_THRESH_SPIDER ) ) {
+    if( has_trait( trait_THRESH_INSECT ) || has_trait( trait_THRESH_SPIDER ) ) {
         return fd_blood_insect;
     }
-    if( mutations.has_trait( trait_THRESH_CEPHALOPOD ) ) {
+    if( has_trait( trait_THRESH_CEPHALOPOD ) ) {
         return fd_blood_invertebrate;
     }
     return fd_blood;
@@ -258,7 +258,7 @@ void Character::mod_stat( const std::string &stat, float modifier )
 int Character::get_fat_to_hp() const
 {
     float mut_fat_hp = 0;
-    for( const trait_id &mut : mutations.get_mutations() ) {
+    for( const trait_id &mut : get_mutations() ) {
         mut_fat_hp += mut.obj().fat_to_max_hp;
     }
 
@@ -446,7 +446,7 @@ bool Character::has_two_arms() const
 // and still not count if they have low enough hitpoints
 int Character::get_working_arm_count() const
 {
-    if( mutations.has_active_mutation( trait_id( "SHELL2" ) ) ) {
+    if( has_active_mutation( trait_id( "SHELL2" ) ) ) {
         return 0;
     }
 
@@ -746,15 +746,14 @@ void Character::recalc_hp()
         str_boost_val = str_boost->calc_bonus( skill_total );
     }
     // Mutated toughness stacks with starting, by design.
-    float hp_mod = 1.0f + mutations.mutation_value( "hp_modifier" ) +
-                   mutations.mutation_value( "hp_modifier_secondary" );
-    float hp_adjustment = mutations.mutation_value( "hp_adjustment" ) + ( str_boost_val * 3 );
+    float hp_mod = 1.0f + mutation_value( "hp_modifier" ) + mutation_value( "hp_modifier_secondary" );
+    float hp_adjustment = mutation_value( "hp_adjustment" ) + ( str_boost_val * 3 );
     for( auto &elem : new_max_hp ) {
         /** @EFFECT_STR_MAX increases base hp */
         elem = 60 + str_max * 3 + hp_adjustment + get_fat_to_hp();
         elem *= hp_mod;
     }
-    if( mutations.has_trait( trait_GLASSJAW ) ) {
+    if( has_trait( trait_GLASSJAW ) ) {
         new_max_hp[hp_head] *= 0.8;
     }
     for( int i = 0; i < num_hp_parts; i++ ) {
@@ -787,24 +786,24 @@ void Character::recalc_sight_limits()
     vision_mode_cache.reset();
 
     // Set sight_max.
-    if( is_blind() || ( in_sleep_state() && !mutations.has_trait( trait_SEESLEEP ) ) ||
+    if( is_blind() || ( in_sleep_state() && !has_trait( trait_SEESLEEP ) ) ||
         has_effect( effect_narcosis ) ) {
         sight_max = 0;
-    } else if( has_effect( effect_boomered ) && ( !( mutations.has_trait( trait_PER_SLIME_OK ) ) ) ) {
+    } else if( has_effect( effect_boomered ) && ( !( has_trait( trait_PER_SLIME_OK ) ) ) ) {
         sight_max = 1;
         vision_mode_cache.set( BOOMERED );
     } else if( has_effect( effect_in_pit ) || has_effect( effect_no_sight ) ||
                ( underwater && !has_bionic( bionic_id( "bio_membrane" ) ) &&
-                 !mutations.has_trait( trait_MEMBRANE ) && !worn_with_flag( "SWIM_GOGGLES" ) &&
-                 !mutations.has_trait( trait_CEPH_EYES ) && !mutations.has_trait( trait_PER_SLIME_OK ) ) ) {
+                 !has_trait( trait_MEMBRANE ) && !worn_with_flag( "SWIM_GOGGLES" ) &&
+                 !has_trait( trait_CEPH_EYES ) && !has_trait( trait_PER_SLIME_OK ) ) ) {
         sight_max = 1;
-    } else if( mutations.has_active_mutation( trait_SHELL2 ) ) {
+    } else if( has_active_mutation( trait_SHELL2 ) ) {
         // You can kinda see out a bit.
         sight_max = 2;
-    } else if( ( mutations.has_trait( trait_MYOPIC ) || mutations.has_trait( trait_URSINE_EYE ) ) &&
+    } else if( ( has_trait( trait_MYOPIC ) || has_trait( trait_URSINE_EYE ) ) &&
                !worn_with_flag( "FIX_NEARSIGHT" ) && !has_effect( effect_contacts ) ) {
         sight_max = 4;
-    } else if( mutations.has_trait( trait_PER_SLIME ) ) {
+    } else if( has_trait( trait_PER_SLIME ) ) {
         sight_max = 6;
     } else if( has_effect( effect_darkness ) ) {
         vision_mode_cache.set( DARKNESS );
@@ -812,45 +811,45 @@ void Character::recalc_sight_limits()
     }
 
     // Debug-only NV, by vache's request
-    if( mutations.has_trait( trait_DEBUG_NIGHTVISION ) ) {
+    if( has_trait( trait_DEBUG_NIGHTVISION ) ) {
         vision_mode_cache.set( DEBUG_NIGHTVISION );
     }
     if( has_nv() ) {
         vision_mode_cache.set( NV_GOGGLES );
     }
-    if( mutations.has_active_mutation( trait_NIGHTVISION3 ) || is_wearing( "rm13_armor_on" ) ||
+    if( has_active_mutation( trait_NIGHTVISION3 ) || is_wearing( "rm13_armor_on" ) ||
         ( is_mounted() && mounted_creature->has_flag( MF_MECH_RECON_VISION ) ) ) {
         vision_mode_cache.set( NIGHTVISION_3 );
     }
-    if( mutations.has_active_mutation( trait_ELFA_FNV ) ) {
+    if( has_active_mutation( trait_ELFA_FNV ) ) {
         vision_mode_cache.set( FULL_ELFA_VISION );
     }
-    if( mutations.has_active_mutation( trait_CEPH_VISION ) ) {
+    if( has_active_mutation( trait_CEPH_VISION ) ) {
         vision_mode_cache.set( CEPH_VISION );
     }
-    if( mutations.has_active_mutation( trait_ELFA_NV ) ) {
+    if( has_active_mutation( trait_ELFA_NV ) ) {
         vision_mode_cache.set( ELFA_VISION );
     }
-    if( mutations.has_active_mutation( trait_NIGHTVISION2 ) ) {
+    if( has_active_mutation( trait_NIGHTVISION2 ) ) {
         vision_mode_cache.set( NIGHTVISION_2 );
     }
-    if( mutations.has_active_mutation( trait_FEL_NV ) ) {
+    if( has_active_mutation( trait_FEL_NV ) ) {
         vision_mode_cache.set( FELINE_VISION );
     }
-    if( mutations.has_active_mutation( trait_URSINE_EYE ) ) {
+    if( has_active_mutation( trait_URSINE_EYE ) ) {
         vision_mode_cache.set( URSINE_VISION );
     }
-    if( mutations.has_active_mutation( trait_NIGHTVISION ) ) {
+    if( has_active_mutation( trait_NIGHTVISION ) ) {
         vision_mode_cache.set( NIGHTVISION_1 );
     }
-    if( mutations.has_trait( trait_BIRD_EYE ) ) {
+    if( has_trait( trait_BIRD_EYE ) ) {
         vision_mode_cache.set( BIRD_EYE );
     }
 
     // Not exactly a sight limit thing, but related enough
     if( has_active_bionic( bionic_id( "bio_infrared" ) ) ||
-        mutations.has_trait( trait_id( "INFRARED" ) ) ||
-        mutations.has_trait( trait_id( "LIZ_IR" ) ) ||
+        has_trait( trait_id( "INFRARED" ) ) ||
+        has_trait( trait_id( "LIZ_IR" ) ) ||
         worn_with_flag( "IR_EFFECT" ) || ( is_mounted() &&
                                            mounted_creature->has_flag( MF_MECH_RECON_VISION ) ) ) {
         vision_mode_cache.set( IR_VISION );
@@ -1647,7 +1646,7 @@ units::volume Character::volume_carried_with_tweaks( const item_tweaks &tweaks )
 
 units::mass Character::weight_capacity() const
 {
-    if( mutations.has_trait( trait_id( "DEBUG_STORAGE" ) ) ) {
+    if( has_trait( trait_id( "DEBUG_STORAGE" ) ) ) {
         // Infinite enough
         return units::mass_max;
     }
@@ -1656,7 +1655,7 @@ units::mass Character::weight_capacity() const
     units::mass ret = Creature::weight_capacity();
     /** @EFFECT_STR increases carrying capacity */
     ret += get_str() * 4_kilogram;
-    ret *= mutations.mutation_value( "weight_capacity_modifier" );
+    ret *= mutation_value( "weight_capacity_modifier" );
 
     units::mass worn_weight_bonus = 0_gram;
     for( const item &it : worn ) {
@@ -1697,7 +1696,7 @@ units::volume Character::volume_capacity() const
 units::volume Character::volume_capacity_reduced_by(
     const units::volume &mod, const std::map<const item *, int> &without_items ) const
 {
-    if( mutations.has_trait( trait_id( "DEBUG_STORAGE" ) ) ) {
+    if( has_trait( trait_id( "DEBUG_STORAGE" ) ) ) {
         return units::volume_max;
     }
 
@@ -1710,16 +1709,16 @@ units::volume Character::volume_capacity_reduced_by(
     if( has_bionic( bionic_id( "bio_storage" ) ) ) {
         ret += 2000_ml;
     }
-    if( mutations.has_trait( trait_SHELL ) ) {
+    if( has_trait( trait_SHELL ) ) {
         ret += 4000_ml;
     }
-    if( mutations.has_trait( trait_SHELL2 ) && !mutations.has_active_mutation( trait_SHELL2 ) ) {
+    if( has_trait( trait_SHELL2 ) && !has_active_mutation( trait_SHELL2 ) ) {
         ret += 6000_ml;
     }
-    if( mutations.has_trait( trait_PACKMULE ) ) {
+    if( has_trait( trait_PACKMULE ) ) {
         ret = ret * 1.4;
     }
-    if( mutations.has_trait( trait_DISORGANIZED ) ) {
+    if( has_trait( trait_DISORGANIZED ) ) {
         ret = ret * 0.6;
     }
     return std::max( ret, 0_ml );
@@ -1736,7 +1735,7 @@ bool Character::can_pickWeight( const item &it, bool safe ) const
 {
     if( !safe ) {
         // Character can carry up to four times their maximum weight
-        return ( weight_carried() + it.weight() <= ( mutations.has_trait( trait_id( "DEBUG_STORAGE" ) ) ?
+        return ( weight_carried() + it.weight() <= ( has_trait( trait_id( "DEBUG_STORAGE" ) ) ?
                  units::mass_max : weight_capacity() * 4 ) );
     } else {
         return ( weight_carried() + it.weight() <= weight_capacity() );
@@ -1923,7 +1922,7 @@ void Character::make_bleed( body_part bp, time_duration duration, int intensity,
                             bool permanent, bool force, bool defferred )
 {
     int b_resist = 0;
-    for( const trait_id &mut : mutations.get_mutations() ) {
+    for( const trait_id &mut : get_mutations() ) {
         b_resist += mut.obj().bleed_resist;
     }
 
@@ -2007,8 +2006,8 @@ void Character::reset_stats()
     mod_int_bonus( get_mod_stat_from_bionic( INTELLIGENCE ) );
 
     // Trait / mutation buffs
-    mod_str_bonus( std::floor( mutations.mutation_value( "str_modifier" ) ) );
-    mod_dodge_bonus( std::floor( mutations.mutation_value( "dodge_modifier" ) ) );
+    mod_str_bonus( std::floor( mutation_value( "str_modifier" ) ) );
+    mod_dodge_bonus( std::floor( mutation_value( "dodge_modifier" ) ) );
 
     /** @EFFECT_STR_MAX above 15 decreases Dodge bonus by 1 (NEGATIVE) */
     if( str_max >= 16 ) {
@@ -2337,8 +2336,8 @@ void Character::mut_cbm_encumb( std::array<encumbrance_data, num_bp> &vals ) con
 
     // Lower penalty for bps covered only by XL armor
     const auto oversize = exclusive_flag_coverage( "OVERSIZE" );
-    for( const trait_id &mut : mutations.get_mutations() ) {
-        apply_mut_encumbrance( vals, mut.obj(), oversize );
+    for( const auto &mut_pair : my_mutations ) {
+        apply_mut_encumbrance( vals, *mut_pair.first, oversize );
     }
 }
 
@@ -2518,7 +2517,7 @@ void Character::set_healthy( int nhealthy )
 void Character::mod_healthy( int nhealthy )
 {
     float mut_rate = 1.0f;
-    for( const trait_id &mut : mutations.get_mutations() ) {
+    for( const trait_id &mut : get_mutations() ) {
         mut_rate *= mut.obj().healthy_rate;
     }
     healthy += nhealthy * mut_rate;
@@ -3169,13 +3168,13 @@ nc_color Character::symbol_color() const
 bool Character::is_immune_field( const field_type_id fid ) const
 {
     // Obviously this makes us invincible
-    if( mutations.has_trait( debug_nodmg ) ) {
+    if( has_trait( debug_nodmg ) ) {
         return true;
     }
     // Check to see if we are immune
     const field_type &ft = fid.obj();
     for( const trait_id &t : ft.immunity_data_traits ) {
-        if( mutations.has_trait( t ) ) {
+        if( has_trait( t ) ) {
             return true;
         }
     }
@@ -3635,7 +3634,7 @@ float Character::healing_rate( float at_rest_quality ) const
     } else {
         heal_rate = get_option< float >( "NPC_HEALING_RATE" );
     }
-    float awake_rate = heal_rate * mutations.mutation_value( "healing_awake" );
+    float awake_rate = heal_rate * mutation_value( "healing_awake" );
     float final_rate = 0.0f;
     if( awake_rate > 0.0f ) {
         final_rate += awake_rate;
@@ -3645,8 +3644,7 @@ float Character::healing_rate( float at_rest_quality ) const
     }
     float asleep_rate = 0.0f;
     if( at_rest_quality > 0.0f ) {
-        asleep_rate = at_rest_quality * heal_rate * ( 1.0f +
-                      mutations.mutation_value( "healing_resting" ) );
+        asleep_rate = at_rest_quality * heal_rate * ( 1.0f + mutation_value( "healing_resting" ) );
     }
     if( asleep_rate > 0.0f ) {
         final_rate += asleep_rate * ( 1.0f + get_healthy() / 200.0f );
@@ -3660,7 +3658,7 @@ float Character::healing_rate( float at_rest_quality ) const
         return 0.0f;
     }
 
-    float primary_hp_mod = mutations.mutation_value( "hp_modifier" );
+    float primary_hp_mod = mutation_value( "hp_modifier" );
     if( primary_hp_mod < 0.0f ) {
         // HP mod can't get below -1.0
         final_rate *= 1.0f + primary_hp_mod;
@@ -3701,7 +3699,7 @@ float Character::healing_rate_medicine( float at_rest_quality, const body_part b
     }
 
     rate_medicine += bandaged_rate + disinfected_rate;
-    rate_medicine *= 1.0f + mutations.mutation_value( "healing_resting" );
+    rate_medicine *= 1.0f + mutation_value( "healing_resting" );
     rate_medicine *= 1.0f + at_rest_quality;
 
     // increase healing if character has both effects
@@ -3714,7 +3712,7 @@ float Character::healing_rate_medicine( float at_rest_quality, const body_part b
     } else {
         rate_medicine *= 1.0f + get_healthy() / 400.0f;
     }
-    float primary_hp_mod = mutations.mutation_value( "hp_modifier" );
+    float primary_hp_mod = mutation_value( "hp_modifier" );
     if( primary_hp_mod < 0.0f ) {
         // HP mod can't get below -1.0
         rate_medicine *= 1.0f + primary_hp_mod;
@@ -3940,17 +3938,17 @@ int Character::get_shout_volume() const
     int shout_multiplier = 2;
 
     // Mutations make shouting louder, they also define the default message
-    if( mutations.has_trait( trait_SHOUT3 ) ) {
+    if( has_trait( trait_SHOUT3 ) ) {
         shout_multiplier = 4;
         base = 20;
-    } else if( mutations.has_trait( trait_SHOUT2 ) ) {
+    } else if( has_trait( trait_SHOUT2 ) ) {
         base = 15;
         shout_multiplier = 3;
     }
 
     // You can't shout without your face
-    if( mutations.has_trait( trait_PROF_FOODP ) && !( is_wearing( itype_id( "foodperson_mask" ) ) ||
-            is_wearing( itype_id( "foodperson_mask_on" ) ) ) ) {
+    if( has_trait( trait_PROF_FOODP ) && !( is_wearing( itype_id( "foodperson_mask" ) ) ||
+                                            is_wearing( itype_id( "foodperson_mask_on" ) ) ) ) {
         base = 0;
         shout_multiplier = 0;
     }
@@ -3983,20 +3981,20 @@ void Character::shout( std::string msg, bool order )
     std::string shout;
 
     // You can't shout without your face
-    if( mutations.has_trait( trait_PROF_FOODP ) && !( is_wearing( itype_id( "foodperson_mask" ) ) ||
-            is_wearing( itype_id( "foodperson_mask_on" ) ) ) ) {
+    if( has_trait( trait_PROF_FOODP ) && !( is_wearing( itype_id( "foodperson_mask" ) ) ||
+                                            is_wearing( itype_id( "foodperson_mask_on" ) ) ) ) {
         add_msg_if_player( m_warning, _( "You try to shout but you have no face!" ) );
         return;
     }
 
     // Mutations make shouting louder, they also define the default message
-    if( mutations.has_trait( trait_SHOUT3 ) ) {
+    if( has_trait( trait_SHOUT3 ) ) {
         base = 20;
         if( msg.empty() ) {
             msg = is_player() ? _( "yourself let out a piercing howl!" ) : _( "a piercing howl!" );
             shout = "howl";
         }
-    } else if( mutations.has_trait( trait_SHOUT2 ) ) {
+    } else if( has_trait( trait_SHOUT2 ) ) {
         base = 15;
         if( msg.empty() ) {
             msg = is_player() ? _( "yourself scream loudly!" ) : _( "a loud scream!" );
@@ -4022,7 +4020,7 @@ void Character::shout( std::string msg, bool order )
 
     // Screaming underwater is not good for oxygen and harder to do overall
     if( underwater ) {
-        if( !mutations.has_trait( trait_GILLS ) && !mutations.has_trait( trait_GILLS_CEPH ) ) {
+        if( !has_trait( trait_GILLS ) && !has_trait( trait_GILLS_CEPH ) ) {
             mod_stat( "oxygen", -noise );
         }
     }
@@ -4441,10 +4439,10 @@ void Character::absorb_hit( body_part bp, damage_instance &dam )
         passive_absorb_hit( bp, elem );
 
         if( elem.type == DT_BASH ) {
-            if( mutations.has_trait( trait_LIGHT_BONES ) ) {
+            if( has_trait( trait_LIGHT_BONES ) ) {
                 elem.amount *= 1.4;
             }
-            if( mutations.has_trait( trait_HOLLOW_BONES ) ) {
+            if( has_trait( trait_HOLLOW_BONES ) ) {
                 elem.amount *= 1.8;
             }
         }
@@ -4630,7 +4628,7 @@ void Character::healall( int dam )
 
 void Character::hurtall( int dam, Creature *source, bool disturb /*= true*/ )
 {
-    if( is_dead_state() || mutations.has_trait( trait_DEBUG_NODMG ) || dam <= 0 ) {
+    if( is_dead_state() || has_trait( trait_DEBUG_NODMG ) || dam <= 0 ) {
         return;
     }
 
@@ -4662,7 +4660,7 @@ int Character::hitall( int dam, int vary, Creature *source )
 
 void Character::on_hurt( Creature *source, bool disturb /*= true*/ )
 {
-    if( mutations.has_trait( trait_ADRENALINE ) && !has_effect( effect_adrenaline ) &&
+    if( has_trait( trait_ADRENALINE ) && !has_effect( effect_adrenaline ) &&
         ( hp_cur[hp_head] < 25 || hp_cur[hp_torso] < 15 ) ) {
         add_effect( effect_adrenaline, 20_minutes );
     }
