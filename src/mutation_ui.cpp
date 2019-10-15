@@ -56,7 +56,7 @@ static void show_mutations_titlebar( const catacurses::window &window,
     wrefresh( window );
 }
 
-void character_mutations::power_mutations()
+void player::power_mutations()
 {
     if( !is_player() ) {
         // TODO: Implement NPCs activating mutations
