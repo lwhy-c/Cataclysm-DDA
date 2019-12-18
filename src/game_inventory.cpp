@@ -1453,6 +1453,59 @@ void game_menus::inv::reassign_letter( player &p, item &it )
     }
 }
 
+void game_menus::inv::container( avatar &you )
+{
+    you.inv.restack( you );
+
+    inventory_pick_selector inv_s( you );
+
+    inv_s.add_character_items( you );
+    inv_s.set_title( _( "Pick Container" ) );
+    inv_s.set_display_stats( false );
+
+    if( inv_s.empty() ) {
+        popup( std::string( _( "Your inventory is empty." ) ), PF_GET_KEY );
+        return;
+    }
+
+    while( true ) {
+
+        item_location loc = inv_s.execute();
+
+        if( !loc ) {
+            break;
+        }
+
+        game_menus::inv::open_contents( you, loc );
+
+        g->refresh_all();
+    }
+}
+
+void game_menus::inv::open_contents( avatar &you, item_location &container )
+{
+    inventory_pick_selector inv_s( you );
+    inv_s.add_contained_items( container );
+    inv_s.set_title( _( "Contents of " ) + container->tname() );
+    inv_s.set_display_stats( false );
+    if( inv_s.empty() ) {
+        popup( std::string( _( "Nothing here." ) ), PF_GET_KEY );
+        return;
+    }
+    while( true ) {
+
+        item_location loc = inv_s.execute();
+
+        if( !loc ) {
+            break;
+        }
+
+        g->refresh_all();
+        g->inventory_item_menu( you.get_item_position( loc.get_item() ) );
+        g->refresh_all();
+    }
+}
+
 void game_menus::inv::swap_letters( player &p )
 {
     p.inv.restack( p );
