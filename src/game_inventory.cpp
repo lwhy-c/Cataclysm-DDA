@@ -1482,7 +1482,7 @@ void game_menus::inv::container( avatar &you )
     }
 }
 
-void game_menus::inv::open_contents( avatar &you, item_location &container )
+void game_menus::inv::open_contents( avatar &you, item_location container )
 {
     inventory_pick_selector inv_s( you );
     inv_s.add_contained_items( container );
@@ -1501,7 +1501,7 @@ void game_menus::inv::open_contents( avatar &you, item_location &container )
         }
 
         g->refresh_all();
-        g->inventory_item_menu( you.get_item_position( loc.get_item() ) );
+        g->inventory_item_menu( loc );
         g->refresh_all();
     }
 }

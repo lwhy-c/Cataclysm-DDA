@@ -189,7 +189,13 @@ const item_category *inventory_entry::get_category_ptr() const
     if( !is_item() ) {
         return nullptr;
     }
-    return &any_item()->get_category();
+    const item_location &loc = any_item();
+    if( loc ) {
+        return &loc->get_category();
+    }
+    else {
+        return nullptr;
+    }
 }
 
 bool inventory_column::activatable() const
@@ -580,6 +586,9 @@ bool inventory_column::has_available_choices() const
 
 bool inventory_column::is_selected( const inventory_entry &entry ) const
 {
+    if( entry.locations.size() == 0 ) {
+        return false;
+    }
     return entry == get_selected() || ( multiselect && is_selected_by_category( entry ) );
 }
 
@@ -1164,6 +1173,17 @@ void inventory_selector::add_character_items( Character &character )
         add_items( own_inv_column, [&character]( item * it ) {
             return item_location( character, it );
         }, restack_items( ( *elem ).begin(), ( *elem ).end(), preset.get_checking_components() ) );
+    }
+}
+
+void inventory_selector::add_contained_items( item_location container )
+{
+    if( container->contents.empty() ) {
+        return;
+    }
+
+    for( item &contained : container->contents ) {
+        add_item( own_inv_column, item_location( u, &contained ) );
     }
 }
 

@@ -1993,6 +1993,7 @@ int game::inventory_item_menu( item_location locThisItem, int iStartX, int iWidt
         addentry( 'w', pgettext( "action", "wield" ), HINT_GOOD );
         addentry( 't', pgettext( "action", "throw" ), HINT_GOOD );
         addentry( 'c', pgettext( "action", "change side" ), u.rate_action_change_side( oThisItem ) );
+        addentry( 'C', pgettext( "action", "open contents" ), HINT_GOOD );
         addentry( 'T', pgettext( "action", "take off" ), u.rate_action_takeoff( oThisItem ) );
         addentry( 'd', pgettext( "action", "drop" ), rate_drop_item );
         addentry( 'U', pgettext( "action", "unload" ), u.rate_action_unload( oThisItem ) );
@@ -2090,6 +2091,8 @@ int game::inventory_item_menu( item_location locThisItem, int iStartX, int iWidt
                 case 'c':
                     u.change_side( locThisItem );
                     break;
+                case 'C':
+                    game_menus::inv::open_contents( u, locThisItem );
                 case 'T':
                     u.takeoff( oThisItem );
                     break;
