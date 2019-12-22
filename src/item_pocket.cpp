@@ -1,10 +1,16 @@
 #include "item_pocket.h"
 
 #include "assign.h"
+#include "crafting.h"
 #include "enums.h"
+#include "game.h"
 #include "generic_factory.h"
 #include "item.h"
+#include "itype.h"
 #include "json.h"
+#include "map.h"
+#include "player.h"
+#include "point.h"
 #include "units.h"
 
 namespace io
@@ -34,6 +40,7 @@ void item_pocket::load( const JsonObject &jo )
     optional( jo, was_loaded, "spoil_multiplier", spoil_multiplier, 1.0f );
     optional( jo, was_loaded, "weight_multiplier", weight_multiplier, 1.0f );
     optional( jo, was_loaded, "moves", moves, 100 );
+    optional( jo, was_loaded, "fire_protection", fire_protection, false );
     optional( jo, was_loaded, "watertight", watertight, false );
     optional( jo, was_loaded, "gastight", gastight, false );
     optional( jo, was_loaded, "open_container", open_container, false );
@@ -52,6 +59,7 @@ void item_pocket::serialize( JsonOut &json ) const
     json.member( "spoil_multiplier", spoil_multiplier );
     json.member( "weight_multiplier", weight_multiplier );
     json.member( "moves", moves );
+    json.member( "fire_protection", fire_protection );
     json.member( "watertight", watertight );
     json.member( "gastight", gastight );
     json.member( "open_container", open_container );
@@ -63,11 +71,78 @@ void item_pocket::serialize( JsonOut &json ) const
     json.end_object();
 }
 
+bool item_pocket::stacks_with( const item_pocket &rhs ) const
+{
+    if( contents.size() != rhs.contents.size() ) {
+        return false;
+    }
+    return std::equal( contents.begin(), contents.end(), rhs.contents.begin(),
+    []( const item & a, const item & b ) {
+        return a.charges == b.charges && a.stacks_with( b );
+    } );
+}
+
 void item_pocket::deserialize( JsonIn &jsin )
 {
     JsonObject data = jsin.get_object();
     load( data );
     optional( data, was_loaded, "contents", contents );
+}
+
+std::list<item> item_pocket::all_items()
+{
+    std::list<item> all_items;
+    for( item &it : contents ) {
+        all_items.emplace_back( it );
+    }
+    for( item &it : all_items ) {
+        std::list<item> all_items_internal{ it.contents.all_items() };
+        all_items.insert( all_items.end(), all_items_internal.begin(), all_items_internal.end() );
+    }
+    return all_items;
+}
+
+std::list<item> item_pocket::all_items() const
+{
+    std::list<item> all_items;
+    for( const item &it : contents ) {
+        all_items.emplace_back( it );
+    }
+    for( const item &it : all_items ) {
+        std::list<item> all_items_internal{ it.contents.all_items() };
+        all_items.insert( all_items.end(), all_items_internal.begin(), all_items_internal.end() );
+    }
+    return all_items;
+}
+
+item &item_pocket::back()
+{
+    return contents.back();
+}
+
+const item &item_pocket::back() const
+{
+    return contents.back();
+}
+
+item &item_pocket::front()
+{
+    return contents.front();
+}
+
+const item &item_pocket::front() const
+{
+    return contents.front();
+}
+
+void item_pocket::pop_back()
+{
+    contents.pop_back();
+}
+
+size_t item_pocket::size() const
+{
+    return contents.size();
 }
 
 units::volume item_pocket::remaining_volume() const
@@ -94,6 +169,124 @@ units::mass item_pocket::item_weight_modifier() const
         total_mass += it.weight() * weight_multiplier;
     }
     return total_mass;
+}
+
+item *item_pocket::magazine_current()
+{
+    auto iter = std::find_if( contents.begin(), contents.end(), []( const item & it ) {
+        return it.is_magazine();
+    } );
+    return iter != contents.end() ? &*iter : nullptr;
+}
+
+void item_pocket::casings_handle( const std::function<bool( item & )> &func )
+{
+    for( auto it = contents.begin(); it != contents.end(); ) {
+        if( it->has_flag( "CASING" ) ) {
+            it->unset_flag( "CASING" );
+            if( func( *it ) ) {
+                it = contents.erase( it );
+                continue;
+            }
+            // didn't handle the casing so reset the flag ready for next call
+            it->set_flag( "CASING" );
+        }
+        ++it;
+    }
+}
+
+bool item_pocket::use_amount( const itype_id &it, int &quantity, std::list<item> &used )
+{
+    bool used_item = false;
+    for( auto a = contents.begin(); a != contents.end() && quantity > 0; ) {
+        if( a->use_amount( it, quantity, used ) ) {
+            used_item = true;
+            a = contents.erase( a );
+        } else {
+            ++a;
+        }
+    }
+    return used_item;
+}
+
+bool item_pocket::will_explode_in_a_fire() const
+{
+    if( fire_protection ) {
+        return false;
+    }
+    return std::any_of( contents.begin(), contents.end(), []( const item & it ) {
+        return it.will_explode_in_fire();
+    } );
+}
+
+bool item_pocket::detonate( const tripoint &pos, std::vector<item> &drops )
+{
+    const auto new_end = std::remove_if( contents.begin(), contents.end(), [&pos, &drops]( item & it ) {
+        return it.detonate( pos, drops );
+    } );
+    if( new_end != contents.end() ) {
+        contents.erase( new_end, contents.end() );
+        // If any of the contents explodes, so does the container
+        return true;
+    }
+    return false;
+}
+
+bool item_pocket::process( const itype &type, player *carrier, const tripoint &pos, bool activate,
+                           float insulation, const temperature_flag flag )
+{
+    const bool preserves = type.container && type.container->preserves;
+    bool processed = false;
+    for( auto it = contents.begin(); it != contents.end(); ) {
+        if( preserves ) {
+            // Simulate that the item has already "rotten" up to last_rot_check, but as item::rot
+            // is not changed, the item is still fresh.
+            it->set_last_rot_check( calendar::turn );
+        }
+        if( it->process( carrier, pos, activate, type.insulation_factor * insulation, flag ) ) {
+            it = contents.erase( it );
+            processed = true;
+        } else {
+            ++it;
+        }
+    }
+    return processed;
+}
+
+bool item_pocket::legacy_unload( player *guy, bool &changed )
+{
+    contents.erase( std::remove_if( contents.begin(), contents.end(),
+    [guy, &changed]( item & e ) {
+        int old_charges = e.charges;
+        const bool consumed = guy->add_or_drop_with_msg( e, true );
+        changed = changed || consumed || e.charges != old_charges;
+        if( consumed ) {
+            guy->mod_moves( -guy->item_handling_cost( e ) );
+        }
+        return consumed;
+    } ), contents.end() );
+    return changed;
+}
+
+void item_pocket::remove_all_ammo( Character &guy )
+{
+    for( auto iter = contents.begin(); iter != contents.end(); ) {
+        if( iter->is_irremovable() ) {
+            iter++;
+            continue;
+        }
+        drop_or_handle( *iter, guy );
+        iter = contents.erase( iter );
+    }
+}
+
+void item_pocket::remove_all_mods( Character &guy )
+{
+    auto mod = std::find_if( contents.begin(), contents.end(), []( const item & e ) {
+        return e.is_toolmod();
+    } );
+    guy.i_add_or_drop( *mod );
+    contents.erase( mod );
 }
 
 bool item_pocket::can_contain( const item &it ) const
@@ -134,9 +327,68 @@ cata::optional<item> item_pocket::remove_item( const item_location &it )
     return remove_item( *it );
 }
 
+bool item_pocket::spill_contents( const tripoint &pos )
+{
+    for( item &it : contents ) {
+        g->m.add_item_or_charges( pos, it );
+    }
+
+    contents.clear();
+    return true;
+}
+
+void item_pocket::clear_items()
+{
+    contents.clear();
+}
+
+bool item_pocket::has_item( const item &it ) const
+{
+    return contents.end() !=
+    std::find_if( contents.begin(), contents.end(), [&it]( const item & e ) {
+        return &it == &e;
+    } );
+}
+
+item *item_pocket::get_item_with( const std::function<bool( const item & )> &filter )
+{
+    for( item &it : contents ) {
+        if( filter( it ) ) {
+            return &it;
+        }
+    }
+    return nullptr;
+}
+
+void item_pocket::remove_items_if( const std::function<bool( item & )> &filter )
+{
+    contents.remove_if( filter );
+}
+
+void item_pocket::has_rotten_away( const tripoint &pnt )
+{
+    for( auto it = contents.begin(); it != contents.end(); ) {
+        if( g->m.has_rotten_away( *it, pnt ) ) {
+            it = contents.erase( it );
+        } else {
+            ++it;
+        }
+    }
+}
+
+bool item_pocket::empty() const
+{
+    return contents.empty();
+}
+
 void item_pocket::add( const item &it )
 {
     contents.emplace_back( it );
+}
+
+std::list<item> &item_pocket::edit_contents()
+{
+    return contents;
 }
 
 bool item_pocket::insert_item( const item &it )
