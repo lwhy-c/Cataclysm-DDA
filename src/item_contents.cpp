@@ -255,7 +255,7 @@ bool item_contents::spill_contents( const tripoint &pos )
 
 cata::optional<item> item_contents::remove_item( const item &it )
 {
-    for( item_pocket pocket : contents ) {
+    for( item_pocket &pocket : contents ) {
         cata::optional<item> ret = pocket.remove_item( it );
         if( ret ) {
             return ret;
@@ -270,6 +270,16 @@ cata::optional<item> item_contents::remove_item( const item_location &it )
         return cata::nullopt;
     }
     return remove_item( *it );
+}
+
+void item_contents::remove_internal( const std::function<bool( item & )> &filter,
+                                     int &count, std::list<item> &res )
+{
+    for( item_pocket &pocket : contents ) {
+        if( pocket.remove_internal( filter, count, res ) ) {
+            return;
+        }
+    }
 }
 
 void item_contents::clear_items()
@@ -326,15 +336,7 @@ bool item_contents::insert_item( const item &it )
 
 void item_contents::insert_legacy( const item &it )
 {
-    for( item_pocket pocket : contents ) {
-        if( pocket.is_type( item_pocket::pocket_type::LEGACY_CONTAINER ) ) {
-            pocket.add( it );
-            return;
-        }
-    }
-    item_pocket fake_pocket( item_pocket::pocket_type::LEGACY_CONTAINER );
-    fake_pocket.add( it );
-    contents.emplace_front( fake_pocket );
+    legacy_pocket().add( it );
 }
 
 std::list<item> &item_contents::legacy_items()

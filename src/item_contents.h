@@ -73,6 +73,9 @@ class item_contents
         void remove_items_if( const std::function<bool( item & )> &filter );
         void has_rotten_away( const tripoint &pnt );
 
+        void remove_internal( const std::function<bool( item & )> &filter,
+                              int &count, std::list<item> &res );
+
         void load( const JsonObject &jo );
         void serialize( JsonOut &json ) const;
         void deserialize( JsonIn &jsin );

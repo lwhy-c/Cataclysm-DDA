@@ -309,14 +309,33 @@ bool item_pocket::can_contain( const item &it ) const
 
 cata::optional<item> item_pocket::remove_item( const item &it )
 {
-    for( auto iter = contents.begin(); iter != contents.end(); iter++ ) {
-        if( &*iter == &it ) {
-            item ret = *iter;
-            contents.erase( iter );
-            return ret;
+    item ret( it );
+    const size_t sz = contents.size();
+    contents.remove_if( [&it]( const item & rhs ) {
+        return &rhs == &it;
+    } );
+    if( sz == contents.size() ) {
+        return cata::nullopt;
+    } else {
+        return ret;
+    }
+}
+
+bool item_pocket::remove_internal( const std::function<bool( item & )> &filter,
+                                   int &count, std::list<item> &res )
+{
+    for( auto it = contents.begin(); it != contents.end(); ) {
+        if( filter( *it ) ) {
+            res.splice( res.end(), contents, it++ );
+            if( --count == 0 ) {
+                return true;
+            }
+        } else {
+            it->contents.remove_internal( filter, count, res );
+            ++it;
         }
     }
-    return cata::nullopt;
+    return false;
 }
 
 cata::optional<item> item_pocket::remove_item( const item_location &it )
@@ -383,7 +402,7 @@ bool item_pocket::empty() const
 
 void item_pocket::add( const item &it )
 {
-    contents.emplace_back( it );
+    contents.push_back( it );
 }
 
 std::list<item> &item_pocket::edit_contents()
@@ -398,7 +417,7 @@ bool item_pocket::insert_item( const item &it )
         return false;
     }
     if( can_contain( it ) ) {
-        contents.emplace_back( it );
+        contents.push_back( it );
         return true;
     }
     return false;

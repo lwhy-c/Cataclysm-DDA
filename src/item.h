@@ -21,6 +21,7 @@
 #include "enums.h"
 #include "flat_set.h"
 #include "io_tags.h"
+#include "item_contents.h"
 #include "item_location.h"
 #include "optional.h"
 #include "relic.h"
@@ -675,16 +676,6 @@ class item : public visitable<item>
          */
         void put_in( const item &payload );
 
-        /** Stores a newly constructed item at the end of this item's contents */
-        template<typename ... Args>
-        item &emplace_back( Args &&... args ) {
-            contents.emplace_back( std::forward<Args>( args )... );
-            if( contents.back().is_null() ) {
-                debugmsg( "Tried to emplace null item" );
-            }
-            return contents.back();
-        }
-
         /**
          * Returns this item into its default container. If it does not have a default container,
          * returns this. It's intended to be used like \code newitem = newitem.in_its_container();\endcode
@@ -1139,6 +1130,8 @@ class item : public visitable<item>
         // contents.  Otherwise, returns nullptr.
         item *get_food();
         const item *get_food() const;
+
+        void set_last_rot_check( const time_point &pt );
 
         /** What faults can potentially occur with this item? */
         std::set<fault_id> faults_potential() const;
@@ -2099,7 +2092,7 @@ class item : public visitable<item>
         static const int INFINITE_CHARGES;
 
         const itype *type;
-        std::list<item> contents;
+        item_contents contents;
         std::list<item> components;
         /** What faults (if any) currently apply to this item */
         std::set<fault_id> faults;

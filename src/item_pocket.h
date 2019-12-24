@@ -89,6 +89,10 @@ class item_pocket
         // only available to help with migration from previous usage of std::list<item>
         std::list<item> &edit_contents();
 
+        // this is used for the visitable interface. returns true if no further visiting is required
+        bool remove_internal( const std::function<bool( item & )> &filter,
+                              int &count, std::list<item> &res );
+
         void load( const JsonObject &jo );
         void serialize( JsonOut &json ) const;
         void deserialize( JsonIn &jsin );
