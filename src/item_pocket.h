@@ -8,6 +8,7 @@
 #include "enum_traits.h"
 #include "optional.h"
 #include "type_id.h"
+#include "ret_val.h"
 #include "units.h"
 
 class Character;
@@ -15,6 +16,7 @@ class item;
 class item_location;
 class player;
 
+struct iteminfo;
 struct itype;
 struct tripoint;
 
@@ -30,6 +32,27 @@ class item_pocket
             CONTAINER,
             MAGAZINE,
             LAST
+        };
+        enum contain_code {
+            SUCCESS,
+            // legacy containers can't technically contain anything
+            ERR_LEGACY_CONTAINER,
+            // trying to put a liquid into a non-watertight container
+            ERR_LIQUID,
+            // trying to put a gas in a non-gastight container
+            ERR_GAS,
+            // trying to put an item that wouldn't fit if the container were empty
+            ERR_TOO_BIG,
+            // trying to put an item that wouldn't fit if the container were empty
+            ERR_TOO_HEAVY,
+            // trying to put an item that wouldn't fit if the container were empty
+            ERR_TOO_SMALL,
+            // pocket doesn't have sufficient space left
+            ERR_NO_SPACE,
+            // pocket doesn't have sufficient weight left
+            ERR_CANNOT_SUPPORT,
+            // hook requires a belt clip
+            ERR_HOOK
         };
 
         item_pocket() = default;
@@ -51,13 +74,14 @@ class item_pocket
         size_t size() const;
         void pop_back();
 
-        bool can_contain( const item &it ) const;
+        ret_val<contain_code> can_contain( const item &it ) const;
 
         // combined volume of contained items
         units::volume contains_volume() const;
         units::volume remaining_volume() const;
         // combined weight of contained items
         units::mass contains_weight() const;
+        units::mass remaining_weight() const;
 
         units::volume item_size_modifier() const;
         units::mass item_weight_modifier() const;
@@ -84,7 +108,7 @@ class item_pocket
         void has_rotten_away( const tripoint &pnt );
 
         // tries to put an item in the pocket. returns false if failure
-        bool insert_item( const item &it );
+        ret_val<contain_code> insert_item( const item &it );
         void add( const item &it );
 
         // only available to help with migration from previous usage of std::list<item>
@@ -98,9 +122,14 @@ class item_pocket
         bool remove_internal( const std::function<bool( item & )> &filter,
                               int &count, std::list<item> &res );
 
+        void general_info( std::vector<iteminfo> &info, int pocket_number, bool disp_pocket_number ) const;
+        void contents_info( std::vector<iteminfo> &info, int pocket_number, bool disp_pocket_number ) const;
+
         void load( const JsonObject &jo );
         void serialize( JsonOut &json ) const;
         void deserialize( JsonIn &jsin );
+
+        bool operator==( const item_pocket &rhs ) const;
 
         bool was_loaded;
     private:
@@ -137,5 +166,10 @@ template<>
 struct enum_traits<item_pocket::pocket_type> {
     static constexpr auto last = item_pocket::pocket_type::LAST;
 };
+
+template<>
+struct ret_val<item_pocket::contain_code>::default_success
+    : public std::integral_constant<item_pocket::contain_code,
+      item_pocket::contain_code::SUCCESS> {};
 
 #endif

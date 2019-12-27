@@ -5,12 +5,14 @@
 #include "enums.h"
 #include "item_pocket.h"
 #include "optional.h"
+#include "ret_val.h"
 #include "units.h"
 
 class item;
 class item_location;
 class player;
 
+struct iteminfo;
 struct tripoint;
 
 class item_contents
@@ -29,7 +31,7 @@ class item_contents
 
         bool stacks_with( const item_contents &rhs ) const;
 
-        bool can_contain( const item &it ) const;
+        ret_val<bool> can_contain( const item &it ) const;
         bool empty() const;
 
         // all the items contained in each pocket combined into one list
@@ -60,7 +62,8 @@ class item_contents
         cata::optional<item> remove_item( const item_location &it );
 
         // tries to put an item in a pocket. returns false on failure
-        bool insert_item( const item &it );
+        // has similar code to can_contain in order to avoid running it twice
+        ret_val<bool> insert_item( const item &it );
         // finds or makes a fake pocket and puts this item into it
         void insert_legacy( const item &it );
         // equivalent to contents.back() when item::contents was a std::list<item>
@@ -70,6 +73,8 @@ class item_contents
         item &legacy_front();
         const item &legacy_front() const;
         size_t legacy_size() const;
+        // ignores legacy_pocket, so -1
+        size_t size() const;
         void legacy_pop_back();
         size_t num_item_stacks() const;
         bool spill_contents( const tripoint &pos );
@@ -83,6 +88,8 @@ class item_contents
 
         void remove_internal( const std::function<bool( item & )> &filter,
                               int &count, std::list<item> &res );
+
+        void info( std::vector<iteminfo> &info ) const;
 
         void load( const JsonObject &jo );
         void serialize( JsonOut &json ) const;

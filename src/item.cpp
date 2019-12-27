@@ -3172,41 +3172,8 @@ void item::final_info( std::vector<iteminfo> &info, const iteminfo_query *parts,
             info.emplace_back( "DESCRIPTION", mod_str );
             info.emplace_back( "DESCRIPTION", mod->type->description.translated() );
         }
-        bool contents_header = false;
-        for( const item &contents_item : contents.all_items() ) {
-            if( !contents_item.type->mod ) {
-                if( !contents_header ) {
-                    insert_separation_line( info );
-                    info.emplace_back( "DESCRIPTION", _( "<bold>Contents of this item</bold>:" ) );
-                    contents_header = true;
-                } else {
-                    // Separate items with a blank line
-                    info.emplace_back( "DESCRIPTION", space );
-                }
-
-                const translation &description = contents_item.type->description;
-
-                if( contents_item.made_of_from_type( LIQUID ) ) {
-                    units::volume contents_volume = contents_item.volume() * batch;
-                    int converted_volume_scale = 0;
-                    const double converted_volume =
-                        round_up( convert_volume( contents_volume.value(),
-                                                  &converted_volume_scale ), 2 );
-                    info.emplace_back( "DESCRIPTION", contents_item.display_name() );
-                    iteminfo::flags f = iteminfo::no_newline;
-                    if( converted_volume_scale != 0 ) {
-                        f |= iteminfo::is_decimal;
-                    }
-                    info.emplace_back( "CONTAINER", description + space,
-                                       string_format( "<num> %s", volume_units_abbr() ), f,
-                                       converted_volume );
-                } else {
-                    info.emplace_back( "DESCRIPTION", contents_item.display_name() );
-                    info.emplace_back( "DESCRIPTION", description.translated() );
-                }
-            }
-        }
     }
+    contents.info( info );
     if( this->get_var( "die_num_sides", 0 ) != 0 ) {
         info.emplace_back( "DESCRIPTION",
                            string_format( _( "* This item can be used as a <info>die</info>, "

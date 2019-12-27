@@ -71,6 +71,22 @@ void item_pocket::serialize( JsonOut &json ) const
     json.end_object();
 }
 
+bool item_pocket::operator==( const item_pocket &rhs ) const
+{
+    return rigid == rhs.rigid &&
+        watertight == rhs.watertight &&
+        gastight == rhs.gastight &&
+        fire_protection == rhs.fire_protection &&
+        hook == rhs.hook &&
+        type == rhs.type &&
+        max_contains_volume == rhs.max_contains_volume &&
+        min_item_volume == rhs.min_item_volume &&
+        max_contains_weight == rhs.max_contains_weight &&
+        spoil_multiplier == rhs.spoil_multiplier &&
+        weight_multiplier == rhs.weight_multiplier &&
+        moves == rhs.moves;
+}
+
 bool item_pocket::stacks_with( const item_pocket &rhs ) const
 {
     if( contents.size() != rhs.contents.size() ) {
@@ -302,23 +318,181 @@ void item_pocket::remove_all_mods( Character &guy )
     contents.erase( mod );
 }
 
-bool item_pocket::can_contain( const item &it ) const
+static void insert_separation_line( std::vector<iteminfo> &info )
+{
+    if( info.empty() || info.back().sName != "--" ) {
+        info.push_back( iteminfo( "DESCRIPTION", "--" ) );
+    }
+}
+
+static std::string vol_to_string( const units::volume &vol )
+{
+    int converted_volume_scale = 0;
+    const double converted_volume =
+        convert_volume( vol.value(),
+                        &converted_volume_scale );
+
+    return string_format( "%.3f %s", converted_volume, volume_units_abbr() );
+}
+
+static std::string weight_to_string( const units::mass &weight )
+{
+    int converted_volume_scale = 0;
+    const double converted_weight = convert_weight( weight );
+
+    return string_format( "%.2f %s", converted_weight, weight_units() );
+}
+
+void item_pocket::general_info( std::vector<iteminfo> &info, int pocket_number, bool disp_pocket_number ) const
+{
+    const std::string space = "  ";
+
+    if ( type != LEGACY_CONTAINER ) {
+        if ( disp_pocket_number ) {
+            info.emplace_back( "DESCRIPTION", _( string_format( "Pocket %d:", pocket_number ) ) );
+        }
+        if ( rigid ) {
+            info.emplace_back( "DESCRIPTION", _( "This pocket is <info>rigid</info>." ) );
+        }
+        if ( min_item_volume > 0_ml ) {
+            info.emplace_back( "DESCRIPTION",
+                _( string_format( "Minimum volume of item allowed: <neutral>%s</neutral>",
+                    vol_to_string( min_item_volume ) ) ) );
+        }
+        info.emplace_back( "DESCRIPTION",
+            _( string_format( "Volume Capacity: <neutral>%s</neutral>",
+                vol_to_string( max_contains_volume ) ) ) );
+        info.emplace_back( "DESCRIPTION",
+            _( string_format( "Weight Capacity: <neutral>%s</neutral>",
+                weight_to_string( max_contains_weight ) ) ) );
+
+        info.emplace_back( "DESCRIPTION",
+            _( string_format( "This pocket takes <neutral>%d</neutral> base moves to take an item out.", moves ) ) );
+
+        if ( watertight ) {
+            info.emplace_back( "DESCRIPTION",
+                _( "This pocket can <info>contain a liquid</info>." ) );
+        }
+        if ( gastight ) {
+            info.emplace_back( "DESCRIPTION",
+                _( "This pocket can <info>contain a gas</info>." ) );
+        }
+        if ( open_container ) {
+            info.emplace_back( "DESCRIPTION",
+                _( "This pocket will <bad>spill</bad> if placed into another item or worn." ) );
+        }
+        if ( fire_protection ) {
+            info.emplace_back( "DESCRIPTION",
+                _( "This pocket <info>protects its contents from fire</info>." ) );
+        }
+        if ( spoil_multiplier != 1.0f ) {
+            info.emplace_back( "DESCRIPTION",
+                string_format( _( "This pocket makes contained items spoil at <neutral>%.0f%%</neutral> their original rate." ),
+                    spoil_multiplier * 100 ) );
+        }
+        if ( weight_multiplier != 1.0f ) {
+            info.emplace_back( "DESCRIPTION",
+                string_format( _( "Items in this pocket weigh <neutral>%.0f%%</neutral> their original weight." ),
+                    weight_multiplier * 100 ) );
+        }
+    }
+}
+
+void item_pocket::contents_info( std::vector<iteminfo> &info, int pocket_number, bool disp_pocket_number ) const
+{
+    const std::string space = "  ";
+
+    insert_separation_line( info );
+    if ( disp_pocket_number ) {
+        info.emplace_back( "DESCRIPTION", _( string_format( "<bold>Pocket %d</bold>", pocket_number ) ) );
+    }
+    if ( contents.empty() ) {
+        info.emplace_back( "DESCRIPTION", _( "This pocket is empty." ) );
+        return;
+    }
+    info.emplace_back( "DESCRIPTION",
+        _( string_format( "Volume: <neutral>%s / %s</neutral>",
+            vol_to_string( contains_volume() ), vol_to_string( max_contains_volume ) ) ) );
+    info.emplace_back( "DESCRIPTION",
+        _( string_format( "Weight: <neutral>%s / %s</neutral>",
+            weight_to_string( contains_weight() ), weight_to_string( max_contains_weight ) ) ) );
+
+    bool contents_header = false;
+    for( const item &contents_item : contents ) {
+        if( !contents_item.type->mod ) {
+            if( !contents_header ) {
+                info.emplace_back( "DESCRIPTION", _( "<bold>Contents of this pocket</bold>:" ) );
+                contents_header = true;
+            } else {
+                // Separate items with a blank line
+                info.emplace_back( "DESCRIPTION", space );
+            }
+
+            const translation &description = contents_item.type->description;
+
+            if( contents_item.made_of_from_type( LIQUID ) ) {
+                units::volume contents_volume = contents_item.volume();
+                int converted_volume_scale = 0;
+                const double converted_volume =
+                    round_up( convert_volume( contents_volume.value(),
+                                              &converted_volume_scale ), 2 );
+                info.emplace_back( "DESCRIPTION", contents_item.display_name() );
+                iteminfo::flags f = iteminfo::no_newline;
+                if( converted_volume_scale != 0 ) {
+                    f |= iteminfo::is_decimal;
+                }
+                info.emplace_back( "CONTAINER", description + space,
+                                   string_format( "<num> %s", volume_units_abbr() ), f,
+                                   converted_volume );
+            } else {
+                info.emplace_back( "DESCRIPTION", contents_item.display_name() );
+            }
+        }
+    }
+}
+
+ret_val<item_pocket::contain_code> item_pocket::can_contain( const item &it ) const
 {
     // legacy container must be added to explicitly
-    if( type == LEGACY_CONTAINER ) {
-        return false;
+    if( type == pocket_type::LEGACY_CONTAINER ) {
+        return ret_val<item_pocket::contain_code>::make_failure( contain_code::ERR_LEGACY_CONTAINER );
     }
-    if( it.made_of( LIQUID ) && !watertight ) {
-        return false;
+    if( it.made_of( phase_id::LIQUID ) && !watertight ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+                   contain_code::ERR_LIQUID, _( "can't contain liquid" ) );
     }
-    if( it.made_of( GAS ) && !gastight ) {
-        return false;
+    if( it.made_of( phase_id::GAS ) && !gastight ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+                   contain_code::ERR_GAS, _( "can't contain gas" ) );
+    }
+    if( it.volume() < min_item_volume ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+                   contain_code::ERR_TOO_SMALL, _( "item is too small" ) );
+    }
+    if ( it.weight() > max_contains_weight ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+            contain_code::ERR_TOO_HEAVY, _( "item is too heavy" ) );
+    }
+    if ( it.weight() > remaining_weight() ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+            contain_code::ERR_CANNOT_SUPPORT, _( "pocket is holding too much weight" ) );
     }
     if( hook ) {
-        return it.has_flag( "BELT_CLIP" ) && it.volume() >= min_item_volume;
+        if( !it.has_flag( "BELT_CLIP" ) ) {
+            return ret_val<item_pocket::contain_code>::make_failure(
+                       contain_code::ERR_HOOK, _( "item can't hook" ) );
+        }
     } else {
-        return it.volume() <= remaining_volume() && it.volume() >= min_item_volume;
+        if( it.volume() > max_contains_volume ) {
+            return ret_val<item_pocket::contain_code>::make_failure(
+                       contain_code::ERR_TOO_BIG, _( "item too big" ) );
+        }
+        if( it.volume() > remaining_volume() ) {
+            return ret_val<item_pocket::contain_code>::make_failure(
+                       contain_code::ERR_NO_SPACE, _( "not enough space" ) );
+        }
     }
+    return ret_val<item_pocket::contain_code>::make_success();
 }
 
 cata::optional<item> item_pocket::remove_item( const item &it )
@@ -424,17 +598,13 @@ std::list<item> &item_pocket::edit_contents()
     return contents;
 }
 
-bool item_pocket::insert_item( const item &it )
+ret_val<item_pocket::contain_code> item_pocket::insert_item( const item &it )
 {
-    if( type == LEGACY_CONTAINER ) {
-        // putting an item into a legacy container needs to be explicit
-        return false;
-    }
-    if( can_contain( it ) ) {
+    const ret_val<item_pocket::contain_code> ret = can_contain( it );
+    if( ret.success() ) {
         contents.push_back( it );
-        return true;
     }
-    return false;
+    return ret;
 }
 
 int item_pocket::obtain_cost( const item &it ) const
@@ -466,4 +636,9 @@ units::mass item_pocket::contains_weight() const
         weight += it.weight();
     }
     return weight;
+}
+
+units::mass item_pocket::remaining_weight() const
+{
+    return max_contains_weight - contains_weight();
 }

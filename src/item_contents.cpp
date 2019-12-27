@@ -51,14 +51,19 @@ bool item_contents::stacks_with( const item_contents &rhs ) const
     } );
 }
 
-bool item_contents::can_contain( const item &it ) const
+ret_val<bool> item_contents::can_contain( const item &it ) const
 {
+    ret_val<bool> ret = ret_val<bool>::make_failure( _( "is not a container" ) );
     for( const item_pocket &pocket : contents ) {
-        if( pocket.can_contain( it ) ) {
-            return true;
+        const ret_val<item_pocket::contain_code> pocket_contain_code = pocket.can_contain( it );
+        if( pocket_contain_code.success() ) {
+            return ret_val<bool>::make_success();
+        }
+        if( pocket_contain_code.value() != item_pocket::contain_code::ERR_LEGACY_CONTAINER ) {
+            ret = ret_val<bool>::make_failure( pocket_contain_code.str() );
         }
     }
-    return false;
+    return ret;
 }
 
 item *item_contents::magazine_current()
@@ -188,6 +193,13 @@ size_t item_contents::num_item_stacks() const
         num += pocket.size();
     }
     return num;
+}
+
+size_t item_contents::size() const
+{
+    // always has a legacy pocket due to contstructor
+    // we want to ignore this
+    return contents.size() - 1;
 }
 
 item_pocket &item_contents::legacy_pocket()
@@ -342,14 +354,19 @@ void item_contents::has_rotten_away( const tripoint &pnt )
     }
 }
 
-bool item_contents::insert_item( const item &it )
+ret_val<bool> item_contents::insert_item( const item &it )
 {
+    ret_val<bool> ret = ret_val<bool>::make_failure( _( "is not a container" ) );
     for( item_pocket &pocket : contents ) {
-        if( pocket.insert_item( it ) ) {
-            return true;
+        const ret_val<item_pocket::contain_code> pocket_contain_code = pocket.insert_item( it );
+        if( pocket_contain_code.success() ) {
+            return ret_val<bool>::make_success();
+        }
+        if( pocket_contain_code.value() != item_pocket::contain_code::ERR_LEGACY_CONTAINER ) {
+            ret = ret_val<bool>::make_failure( pocket_contain_code.str() );
         }
     }
-    return false;
+    return ret;
 }
 
 int item_contents::obtain_cost( const item &it ) const
@@ -361,6 +378,58 @@ int item_contents::obtain_cost( const item &it ) const
         }
     }
     return 0;
+}
+
+static void insert_separation_line( std::vector<iteminfo> &info )
+{
+    if ( info.empty() || info.back().sName != "--" ) {
+        info.push_back( iteminfo( "DESCRIPTION", "--" ) );
+    }
+}
+
+void item_contents::info( std::vector<iteminfo> &info ) const
+{
+    if( !nestable ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "* This item <bad>cannot be placed into other containers</bad>." ) );
+    }
+    int pocket_number = 1;
+    std::vector<iteminfo> contents_info;
+    std::vector<item_pocket> found_pockets;
+    std::map<int, int> pocket_num; // index, amount
+    for( const item_pocket &pocket : contents ) {
+        if( !pocket.is_type( item_pocket::pocket_type::LEGACY_CONTAINER ) ) {
+            bool found = false;
+            int idx = 0;
+            for ( const item_pocket &found_pocket : found_pockets )
+            {
+                if ( found_pocket == pocket )
+                {
+                    found = true;
+                    pocket_num[idx]++;
+                }
+                idx++;
+            }
+            if ( !found )
+            {
+                found_pockets.push_back( pocket );
+                pocket_num[idx]++;
+            }
+            pocket.contents_info( contents_info, pocket_number++, size() != 1 );
+        }
+    }
+    int idx = 0;
+    for ( const item_pocket &pocket : found_pockets )
+    {
+        insert_separation_line( info );
+        if ( pocket_num[idx] > 1 )
+        {
+            info.emplace_back( "DESCRIPTION", _( string_format( "<bold>Pockets (%d)</bold>", pocket_num[idx] ) ) );
+        }
+        idx++;
+        pocket.general_info( info, 0, false );
+    }
+    info.insert( info.end(), contents_info.begin(), contents_info.end() );
 }
 
 void item_contents::insert_legacy( const item &it )
