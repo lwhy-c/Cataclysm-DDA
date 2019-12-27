@@ -674,7 +674,8 @@ class item : public visitable<item>
         /**
          * Puts the given item into this one, no checks are performed.
          */
-        void put_in( const item &payload );
+        void put_in( const item &payload,
+                     item_pocket::pocket_type pk_type = item_pocket::pocket_type::LEGACY_CONTAINER );
 
         /**
          * Returns this item into its default container. If it does not have a default container,

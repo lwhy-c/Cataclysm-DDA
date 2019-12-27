@@ -184,7 +184,7 @@ item::item() : bday( calendar::start_of_cataclysm )
 {
     type = nullitem();
     charges = 0;
-    contents = item_contents();
+    contents = type->pocket_data;
 }
 
 item::item( const itype *type, time_point turn, int qty ) : type( type ), bday( turn )
@@ -250,7 +250,7 @@ item::item( const itype *type, time_point turn, int qty ) : type( type ), bday( 
     if( type->relic_data ) {
         relic_data = *type->relic_data;
     }
-    contents = item_contents();
+    contents = type->pocket_data;
 }
 
 item::item( const itype_id &id, time_point turn, int qty )
@@ -793,9 +793,14 @@ bool item::merge_charges( const item &rhs )
     return true;
 }
 
-void item::put_in( const item &payload )
+void item::put_in( const item &payload, item_pocket::pocket_type pk_type )
 {
-    contents.insert_legacy( payload );
+    switch( pk_type ) {
+        case item_pocket::pocket_type::CONTAINER:
+            contents.insert_item( payload );
+        default:
+            contents.insert_legacy( payload );
+    }
 }
 
 void item::set_var( const std::string &name, const int value )
@@ -3096,7 +3101,7 @@ void item::final_info( std::vector<iteminfo> &info, const iteminfo_query *parts,
         }
         const holster_actor *ptr = dynamic_cast<const holster_actor *>
                                    ( e.get_use( "holster" )->get_actor_ptr() );
-        return ptr->can_holster( *this );
+        return ptr->can_holster( item( &e ), *this );
     } );
 
     if( !holsters.empty() && parts->test( iteminfo_parts::DESCRIPTION_HOLSTERS ) ) {
@@ -8021,7 +8026,7 @@ bool item::can_holster( const item &obj, bool ignore ) const
 
     const holster_actor *ptr = dynamic_cast<const holster_actor *>
                                ( type->get_use( "holster" )->get_actor_ptr() );
-    if( !ptr->can_holster( obj ) ) {
+    if( !ptr->can_holster( *this, obj ) ) {
         return false; // item is not a suitable holster for obj
     }
 

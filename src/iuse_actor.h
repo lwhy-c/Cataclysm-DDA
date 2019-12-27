@@ -745,7 +745,7 @@ class holster_actor : public iuse_actor
         std::vector<std::string> flags;
 
         /** Check if obj could be stored in the holster */
-        bool can_holster( const item &obj ) const;
+        bool can_holster( const item &holster, const item &obj ) const;
 
         /** Store an object in the holster */
         bool store( player &p, item &holster, item &obj ) const;

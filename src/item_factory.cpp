@@ -17,6 +17,7 @@
 #include "catacharset.h"
 #include "debug.h"
 #include "enums.h"
+#include "generic_factory.h"
 #include "init.h"
 #include "item.h"
 #include "item_category.h"
@@ -2182,6 +2183,9 @@ void Item_factory::load_basic_info( const JsonObject &jo, itype &def, const std:
             def.conditional_names.push_back( cname );
         }
     }
+
+    optional( jo, false, "pocket_data", def.pocket_data );
+    def.pocket_data.add_legacy_pocket();
 
     load_slot_optional( def.container, jo, "container_data", src );
     load_slot_optional( def.armor, jo, "armor_data", src );

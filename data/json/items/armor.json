@@ -7989,14 +7989,18 @@
     "storage": "1 L",
     "encumbrance": 10,
     "material_thickness": 2,
+    "pocket_data": {
+      "contents": [
+        { "pocket_type": "CONTAINER", "max_contains_volume": "1 L", "max_contains_weight": "1 kg", "moves": 50 },
+        { "pocket_type": "CONTAINER", "max_contains_volume": "1 L", "max_contains_weight": "1 kg", "moves": 50 },
+        { "pocket_type": "CONTAINER", "max_contains_volume": "1 L", "max_contains_weight": "1 kg", "moves": 50 },
+        { "pocket_type": "CONTAINER", "max_contains_volume": "1 L", "max_contains_weight": "1 kg", "moves": 50 }
+      ]
+    },
     "use_action": {
       "type": "holster",
       "holster_prompt": "Attach what to belt loop?",
       "holster_msg": "You clip your %s to your %s",
-      "multi": 4,
-      "max_volume": "1 L",
-      "max_weight": 1000,
-      "draw_cost": 50,
       "flags": [ "BELT_CLIP" ]
     },
     "flags": [ "WAIST", "NO_QUICKDRAW", "WATER_FRIENDLY" ]
@@ -8900,13 +8904,15 @@
     "coverage": 30,
     "encumbrance": 10,
     "material_thickness": 4,
+    "pocket_data": {
+      "contents": [
+        { "pocket_type": "CONTAINER", "max_contains_volume": "6250 ml", "max_contains_weight": "20 kg", "moves": 30 }
+      ]
+    },
     "use_action": {
       "type": "holster",
       "holster_prompt": "Stash javelins",
       "holster_msg": "You stash your %s.",
-      "multi": 5,
-      "max_volume": "1250 ml",
-      "draw_cost": 30,
       "flags": [ "JAVELIN" ]
     },
     "flags": [ "WATER_FRIENDLY", "OVERSIZE", "BELTED" ]

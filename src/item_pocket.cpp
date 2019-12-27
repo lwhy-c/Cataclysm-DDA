@@ -115,6 +115,19 @@ std::list<item> item_pocket::all_items() const
     return all_items;
 }
 
+std::list<item *> item_pocket::all_items_ptr( item_pocket::pocket_type pk_type )
+{
+    std::list<item *> all_items_top;
+    for( item &it : contents ) {
+        all_items_top.push_back( &it );
+    }
+    for( item *it : all_items_top ) {
+        std::list<item *> all_items_internal{ it->contents.all_items_ptr( pk_type ) };
+        all_items_top.insert( all_items_top.end(), all_items_internal.begin(), all_items_internal.end() );
+    }
+    return all_items_top;
+}
+
 item &item_pocket::back()
 {
     return contents.back();
@@ -291,8 +304,9 @@ void item_pocket::remove_all_mods( Character &guy )
 
 bool item_pocket::can_contain( const item &it ) const
 {
+    // legacy container must be added to explicitly
     if( type == LEGACY_CONTAINER ) {
-        return true;
+        return false;
     }
     if( it.made_of( LIQUID ) && !watertight ) {
         return false;
@@ -421,6 +435,14 @@ bool item_pocket::insert_item( const item &it )
         return true;
     }
     return false;
+}
+
+int item_pocket::obtain_cost( const item &it ) const
+{
+    if( has_item( it ) ) {
+        return moves;
+    }
+    return 0;
 }
 
 bool item_pocket::is_type( pocket_type ptype ) const

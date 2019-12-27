@@ -24,6 +24,9 @@ class item_contents
             return nestable;
         }
 
+        // for usage with loading to aid migration
+        void add_legacy_pocket();
+
         bool stacks_with( const item_contents &rhs ) const;
 
         bool can_contain( const item &it ) const;
@@ -32,6 +35,9 @@ class item_contents
         // all the items contained in each pocket combined into one list
         std::list<item> all_items();
         std::list<item> all_items() const;
+        // all item pointers in a specific pocket type
+        // used for inventory screen
+        std::list<item *> all_items_ptr( item_pocket::pocket_type pk_type );
 
         // total size the parent item needs to be modified based on rigidity of pockets
         units::volume item_size_modifier() const;
@@ -72,6 +78,8 @@ class item_contents
         item *get_item_with( const std::function<bool( const item & )> &filter );
         void remove_items_if( const std::function<bool( item & )> &filter );
         void has_rotten_away( const tripoint &pnt );
+
+        int obtain_cost( const item &it ) const;
 
         void remove_internal( const std::function<bool( item & )> &filter,
                               int &count, std::list<item> &res );

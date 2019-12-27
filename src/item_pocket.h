@@ -42,6 +42,7 @@ class item_pocket
 
         std::list<item> all_items();
         std::list<item> all_items() const;
+        std::list<item *> all_items_ptr( pocket_type pk_type );
 
         item &back();
         const item &back() const;
@@ -88,6 +89,10 @@ class item_pocket
 
         // only available to help with migration from previous usage of std::list<item>
         std::list<item> &edit_contents();
+
+        // cost of getting an item from this pocket
+        // @TODO: make move cost vary based on other contained items
+        int obtain_cost( const item &it ) const;
 
         // this is used for the visitable interface. returns true if no further visiting is required
         bool remove_internal( const std::function<bool( item & )> &filter,

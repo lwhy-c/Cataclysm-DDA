@@ -34,6 +34,11 @@ void item_contents::deserialize( JsonIn &jsin )
     load( data );
 }
 
+void item_contents::add_legacy_pocket()
+{
+    contents.emplace_front( item_pocket( item_pocket::pocket_type::LEGACY_CONTAINER ) );
+}
+
 bool item_contents::stacks_with( const item_contents &rhs ) const
 {
     if( contents.size() != rhs.contents.size() ) {
@@ -227,6 +232,19 @@ std::list<item> item_contents::all_items() const
     return item_list;
 }
 
+std::list<item *> item_contents::all_items_ptr( item_pocket::pocket_type pk_type )
+{
+    std::list<item *> all_items_internal;
+    for( item_pocket &pocket : contents ) {
+        if( pocket.is_type( pk_type ) ) {
+            std::list<item *> contained_items = pocket.all_items_ptr( pk_type );
+            all_items_internal.insert( all_items_internal.end(), contained_items.begin(),
+                                       contained_items.end() );
+        }
+    }
+    return all_items_internal;
+}
+
 units::volume item_contents::item_size_modifier() const
 {
     units::volume total_vol = 0_ml;
@@ -326,12 +344,23 @@ void item_contents::has_rotten_away( const tripoint &pnt )
 
 bool item_contents::insert_item( const item &it )
 {
-    for( item_pocket pocket : contents ) {
+    for( item_pocket &pocket : contents ) {
         if( pocket.insert_item( it ) ) {
             return true;
         }
     }
     return false;
+}
+
+int item_contents::obtain_cost( const item &it ) const
+{
+    for( const item_pocket &pocket : contents ) {
+        const int mv = pocket.obtain_cost( it );
+        if( mv != 0 ) {
+            return mv;
+        }
+    }
+    return 0;
 }
 
 void item_contents::insert_legacy( const item &it )

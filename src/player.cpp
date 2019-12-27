@@ -6335,10 +6335,11 @@ bool player::wield_contents( item &container, item *internal_item, bool penaltie
     return true;
 }
 
-void player::store( item &container, item &put, bool penalties, int base_cost )
+void player::store( item &container, item &put, bool penalties, int base_cost,
+                    item_pocket::pocket_type pk_type )
 {
     moves -= item_store_cost( put, container, penalties, base_cost );
-    container.put_in( i_rem( &put ) );
+    container.put_in( i_rem( &put ), pk_type );
     reset_encumbrance();
 }
 
