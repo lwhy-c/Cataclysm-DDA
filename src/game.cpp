@@ -8604,6 +8604,8 @@ void game::wield( item_location &loc )
                 }
                 break;
             }
+            case item_location::type::container:
+                break;
             case item_location::type::invalid:
                 debugmsg( "Failed wield from invalid item location" );
                 break;

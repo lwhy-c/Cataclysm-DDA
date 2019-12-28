@@ -344,9 +344,7 @@ static std::string vol_to_string( const units::volume &vol )
 
 static std::string weight_to_string( const units::mass &weight )
 {
-    int converted_volume_scale = 0;
     const double converted_weight = convert_weight( weight );
-
     return string_format( "%.2f %s", converted_weight, weight_units() );
 }
 

@@ -2528,7 +2528,7 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
 
     std::list<item *> &legacy_items = it.contents.all_items_ptr( item_pocket::pocket_type::CONTAINER );
     std::transform( legacy_items.begin(), legacy_items.end(), std::back_inserter( opts ),
-    []( const item *elem ) {
+    []( const item * elem ) {
         return string_format( _( "Draw %s" ), elem->display_name() );
     } );
 

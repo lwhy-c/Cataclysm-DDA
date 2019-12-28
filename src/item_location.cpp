@@ -500,7 +500,7 @@ class item_location::impl::item_in_container : public item_location::impl
         }
     public:
         item_in_container( const item_location &container, item *which ) :
-            container( container ), impl( which ) {}
+            impl( which ), container( container ) {}
 
         void serialize( JsonOut &js ) const override {
             js.start_object();

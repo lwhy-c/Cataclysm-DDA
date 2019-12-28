@@ -798,8 +798,10 @@ void item::put_in( const item &payload, item_pocket::pocket_type pk_type )
     switch( pk_type ) {
         case item_pocket::pocket_type::CONTAINER:
             contents.insert_item( payload );
+            break;
         default:
             contents.insert_legacy( payload );
+            break;
     }
 }
 
@@ -2530,7 +2532,7 @@ void item::qualities_info( std::vector<iteminfo> &info, const iteminfo_query *pa
     }
 }
 
-void item::final_info( std::vector<iteminfo> &info, const iteminfo_query *parts, int batch,
+void item::final_info( std::vector<iteminfo> &info, const iteminfo_query *parts, int,
                        bool /*debug*/ ) const
 {
     if( is_null() ) {
@@ -7984,7 +7986,7 @@ void item::mark_as_used_by_player( const player &p )
     used_by_ids += string_format( "%d;", p.getID().get_value() );
 }
 
-bool item::can_holster( const item &obj, bool ignore ) const
+bool item::can_holster( const item &obj, bool ) const
 {
     if( !type->can_use( "holster" ) ) {
         return false; // item is not a holster
