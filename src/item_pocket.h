@@ -79,6 +79,7 @@ class item_pocket
         // combined volume of contained items
         units::volume contains_volume() const;
         units::volume remaining_volume() const;
+        units::volume volume_capacity() const;
         // combined weight of contained items
         units::mass contains_weight() const;
         units::mass remaining_weight() const;

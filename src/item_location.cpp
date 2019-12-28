@@ -345,9 +345,8 @@ class item_location::impl::item_on_person : public item_location::impl
                 // holsters may also adjust the volume cost factor
 
                 if( parents.back()->can_holster( obj, true ) ) {
-                    auto ptr = dynamic_cast<const holster_actor *>
-                               ( parents.back()->type->get_use( "holster" )->get_actor_ptr() );
-                    mv += dynamic_cast<player *>( who )->item_handling_cost( obj, false, ptr->draw_cost );
+                    mv += who->as_player()->item_handling_cost( obj, false,
+                            parents.back()->contents.obtain_cost( obj ) );
 
                 } else if( parents.back()->is_bandolier() ) {
                     auto ptr = dynamic_cast<const bandolier_actor *>

@@ -266,6 +266,17 @@ units::volume item_contents::item_size_modifier() const
     return total_vol;
 }
 
+units::volume item_contents::total_container_capacity() const
+{
+    units::volume total_vol = 0_ml;
+    for( const item_pocket &pocket : contents ) {
+        if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) ) {
+            total_vol += pocket.volume_capacity();
+        }
+    }
+    return total_vol;
+}
+
 units::mass item_contents::item_weight_modifier() const
 {
     units::mass total_mass = 0_gram;
@@ -382,7 +393,7 @@ int item_contents::obtain_cost( const item &it ) const
 
 static void insert_separation_line( std::vector<iteminfo> &info )
 {
-    if ( info.empty() || info.back().sName != "--" ) {
+    if( info.empty() || info.back().sName != "--" ) {
         info.push_back( iteminfo( "DESCRIPTION", "--" ) );
     }
 }
@@ -401,17 +412,14 @@ void item_contents::info( std::vector<iteminfo> &info ) const
         if( !pocket.is_type( item_pocket::pocket_type::LEGACY_CONTAINER ) ) {
             bool found = false;
             int idx = 0;
-            for ( const item_pocket &found_pocket : found_pockets )
-            {
-                if ( found_pocket == pocket )
-                {
+            for( const item_pocket &found_pocket : found_pockets ) {
+                if( found_pocket == pocket ) {
                     found = true;
                     pocket_num[idx]++;
                 }
                 idx++;
             }
-            if ( !found )
-            {
+            if( !found ) {
                 found_pockets.push_back( pocket );
                 pocket_num[idx]++;
             }
@@ -419,12 +427,11 @@ void item_contents::info( std::vector<iteminfo> &info ) const
         }
     }
     int idx = 0;
-    for ( const item_pocket &pocket : found_pockets )
-    {
+    for( const item_pocket &pocket : found_pockets ) {
         insert_separation_line( info );
-        if ( pocket_num[idx] > 1 )
-        {
-            info.emplace_back( "DESCRIPTION", _( string_format( "<bold>Pockets (%d)</bold>", pocket_num[idx] ) ) );
+        if( pocket_num[idx] > 1 ) {
+            info.emplace_back( "DESCRIPTION", _( string_format( "<bold>Pockets (%d)</bold>",
+                                                 pocket_num[idx] ) ) );
         }
         idx++;
         pocket.general_info( info, 0, false );

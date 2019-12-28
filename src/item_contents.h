@@ -43,6 +43,7 @@ class item_contents
 
         // total size the parent item needs to be modified based on rigidity of pockets
         units::volume item_size_modifier() const;
+        units::volume total_container_capacity() const;
         // total weight the parent item needs to be modified based on weight modifiers of pockets
         units::mass item_weight_modifier() const;
 

@@ -4376,7 +4376,7 @@ bool player::dispose_item( item_location &&obj, const std::string &prompt )
             auto ptr = dynamic_cast<const holster_actor *>( e.type->get_use( "holster" )->get_actor_ptr() );
             opts.emplace_back( dispose_option {
                 string_format( _( "Store in %s" ), e.tname() ), true, e.invlet,
-                item_store_cost( *obj, e, false, ptr->draw_cost ),
+                item_store_cost( *obj, e, false, e.contents.obtain_cost( *obj ) ),
                 [this, ptr, &e, &obj]{
                     return ptr->store( *this, e, *obj );
                 }

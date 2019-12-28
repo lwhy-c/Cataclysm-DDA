@@ -7461,8 +7461,7 @@ units::volume item::get_total_capacity() const
     }
 
     if( is_holster() ) {
-        result += dynamic_cast<const holster_actor *>
-                  ( type->get_use( "holster" )->get_actor_ptr() )->max_stored_volume();
+        result += contents.total_container_capacity();
     }
 
     return result;
@@ -7995,10 +7994,6 @@ bool item::can_holster( const item &obj, bool ignore ) const
                                ( type->get_use( "holster" )->get_actor_ptr() );
     if( !ptr->can_holster( *this, obj ) ) {
         return false; // item is not a suitable holster for obj
-    }
-
-    if( !ignore && static_cast<int>( contents.legacy_size() ) >= ptr->multi ) {
-        return false; // item is already full
     }
 
     return true;
