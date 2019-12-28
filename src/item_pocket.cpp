@@ -44,7 +44,7 @@ void item_pocket::load( const JsonObject &jo )
     optional( jo, was_loaded, "watertight", watertight, false );
     optional( jo, was_loaded, "gastight", gastight, false );
     optional( jo, was_loaded, "open_container", open_container, false );
-    optional( jo, was_loaded, "hook", hook, false );
+    optional( jo, was_loaded, "flag_restriction", flag_restriction );
     optional( jo, was_loaded, "rigid", rigid, false );
 }
 
@@ -63,7 +63,7 @@ void item_pocket::serialize( JsonOut &json ) const
     json.member( "watertight", watertight );
     json.member( "gastight", gastight );
     json.member( "open_container", open_container );
-    json.member( "hook", hook );
+    json.member( "flag_restriction", flag_restriction );
     json.member( "rigid", rigid );
 
     json.member( "contents", contents );
@@ -77,7 +77,7 @@ bool item_pocket::operator==( const item_pocket &rhs ) const
            watertight == rhs.watertight &&
            gastight == rhs.gastight &&
            fire_protection == rhs.fire_protection &&
-           hook == rhs.hook &&
+           flag_restriction == rhs.flag_restriction &&
            type == rhs.type &&
            max_contains_volume == rhs.max_contains_volume &&
            min_item_volume == rhs.min_item_volume &&
@@ -486,20 +486,18 @@ ret_val<item_pocket::contain_code> item_pocket::can_contain( const item &it ) co
         return ret_val<item_pocket::contain_code>::make_failure(
                    contain_code::ERR_CANNOT_SUPPORT, _( "pocket is holding too much weight" ) );
     }
-    if( hook ) {
-        if( !it.has_flag( "BELT_CLIP" ) ) {
-            return ret_val<item_pocket::contain_code>::make_failure(
-                       contain_code::ERR_HOOK, _( "item can't hook" ) );
-        }
-    } else {
-        if( it.volume() > max_contains_volume ) {
-            return ret_val<item_pocket::contain_code>::make_failure(
-                       contain_code::ERR_TOO_BIG, _( "item too big" ) );
-        }
-        if( it.volume() > remaining_volume() ) {
-            return ret_val<item_pocket::contain_code>::make_failure(
-                       contain_code::ERR_NO_SPACE, _( "not enough space" ) );
-        }
+    if( !flag_restriction.empty() && !it.has_any_flag( flag_restriction ) ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+                   contain_code::ERR_FLAG, _( "item does not have correct flag" );
+               )
+    }
+    if( it.volume() > max_contains_volume ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+                   contain_code::ERR_TOO_BIG, _( "item too big" ) );
+    }
+    if( it.volume() > remaining_volume() ) {
+        return ret_val<item_pocket::contain_code>::make_failure(
+                   contain_code::ERR_NO_SPACE, _( "not enough space" ) );
     }
     return ret_val<item_pocket::contain_code>::make_success();
 }

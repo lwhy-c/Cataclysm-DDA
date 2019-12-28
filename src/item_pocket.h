@@ -52,8 +52,8 @@ class item_pocket
             ERR_NO_SPACE,
             // pocket doesn't have sufficient weight left
             ERR_CANNOT_SUPPORT,
-            // hook requires a belt clip
-            ERR_HOOK
+            // requires a flag
+            ERR_FLAG
         };
 
         item_pocket() = default;
@@ -159,8 +159,9 @@ class item_pocket
         bool gastight = false;
         // the pocket will spill its contents if placed in another container
         bool open_container = false;
-        // allows only items that can be stored on a hook to be contained in this pocket
-        bool hook = false;
+        // allows only items with the appropriate flags to be stored inside
+        // empty means no restriction
+        std::vector<std::string> flag_restriction;
         // container's size and encumbrance does not change based on contents.
         bool rigid = false;
         // the items inside the pocket
