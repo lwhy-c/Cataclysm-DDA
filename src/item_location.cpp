@@ -521,7 +521,7 @@ class item_location::impl::item_in_container : public item_location::impl
             }
         }
 
-        std::string describe( const Character *ch ) const override {
+        std::string describe( const Character * ) const override {
             if( !target() ) {
                 return std::string();
             }
