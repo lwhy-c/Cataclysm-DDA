@@ -8905,16 +8905,9 @@
     "encumbrance": 10,
     "material_thickness": 4,
     "pocket_data": {
-      "contents": [
-        { "pocket_type": "CONTAINER", "max_contains_volume": "6250 ml", "max_contains_weight": "20 kg", "moves": 30 }
-      ]
+      "contents": [ { "pocket_type": "CONTAINER", "max_contains_volume": "6250 ml", "max_contains_weight": "20 kg", "moves": 30 } ]
     },
-    "use_action": {
-      "type": "holster",
-      "holster_prompt": "Stash javelins",
-      "holster_msg": "You stash your %s.",
-      "flags": [ "JAVELIN" ]
-    },
+    "use_action": { "type": "holster", "holster_prompt": "Stash javelins", "holster_msg": "You stash your %s.", "flags": [ "JAVELIN" ] },
     "flags": [ "WATER_FRIENDLY", "OVERSIZE", "BELTED" ]
   },
   {
