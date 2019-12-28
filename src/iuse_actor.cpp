@@ -2526,10 +2526,10 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
     opts.push_back( prompt );
     pos = -1;
 
-    std::list<item> &legacy_items = it.contents.legacy_items();
+    std::list<item *> &legacy_items = it.contents.all_items_ptr( item_pocket::pocket_type::CONTAINER );
     std::transform( legacy_items.begin(), legacy_items.end(), std::back_inserter( opts ),
-    []( const item & elem ) {
-        return string_format( _( "Draw %s" ), elem.display_name() );
+    []( const item *elem ) {
+        return string_format( _( "Draw %s" ), elem->display_name() );
     } );
 
     item *internal_item = nullptr;
@@ -2538,15 +2538,12 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
         if( ret < 0 ) {
             pos = -2;
         } else {
-            pos += ret;
-            if( opts.size() != it.contents.legacy_size() ) {
-                ret--;
-            }
+            pos += ret--;
             auto iter = std::next( legacy_items.begin(), ret );
-            internal_item = &*iter;
+            internal_item = *iter;
         }
     } else {
-        internal_item = &it.contents.legacy_front();
+        internal_item = legacy_items.front();
     }
 
     if( pos < -1 ) {
