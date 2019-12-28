@@ -33,6 +33,7 @@ std::string enum_to_string<item_pocket::pocket_type>( item_pocket::pocket_type d
 
 void item_pocket::load( const JsonObject &jo )
 {
+    optional( jo, was_loaded, "name", name );
     optional( jo, was_loaded, "pocket_type", type, CONTAINER );
     optional( jo, was_loaded, "min_item_volume", min_item_volume, volume_reader(), 0_ml );
     mandatory( jo, was_loaded, "max_contains_volume", max_contains_volume, volume_reader() );
@@ -52,6 +53,7 @@ void item_pocket::serialize( JsonOut &json ) const
 {
     json.start_object();
 
+    json.member( "name", name );
     json.member( "pocket_type", type );
     json.member( "min_item_volume", min_item_volume );
     json.member( "max_contains_volume", max_contains_volume );
@@ -413,7 +415,11 @@ void item_pocket::contents_info( std::vector<iteminfo> &info, int pocket_number,
 
     insert_separation_line( info );
     if( disp_pocket_number ) {
-        info.emplace_back( "DESCRIPTION", _( string_format( "<bold>Pocket %d</bold>", pocket_number ) ) );
+        if( name ) {
+            info.emplace_back( "DESCRIPTION", name->translated() );
+        } else {
+            info.emplace_back( "DESCRIPTION", _( string_format( "<bold>Pocket %d</bold>", pocket_number ) ) );
+        }
     }
     if( contents.empty() ) {
         info.emplace_back( "DESCRIPTION", _( "This pocket is empty." ) );
@@ -488,8 +494,7 @@ ret_val<item_pocket::contain_code> item_pocket::can_contain( const item &it ) co
     }
     if( !flag_restriction.empty() && !it.has_any_flag( flag_restriction ) ) {
         return ret_val<item_pocket::contain_code>::make_failure(
-                   contain_code::ERR_FLAG, _( "item does not have correct flag" );
-               )
+                   contain_code::ERR_FLAG, _( "item does not have correct flag" ) );
     }
     if( it.volume() > max_contains_volume ) {
         return ret_val<item_pocket::contain_code>::make_failure(

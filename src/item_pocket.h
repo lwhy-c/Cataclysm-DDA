@@ -9,6 +9,7 @@
 #include "optional.h"
 #include "type_id.h"
 #include "ret_val.h"
+#include "translations.h"
 #include "units.h"
 #include "visitable.h"
 
@@ -138,6 +139,8 @@ class item_pocket
 
         bool was_loaded;
     private:
+        // name displayed in item info
+        cata::optional<translation> name;
         pocket_type type = CONTAINER;
         // max volume of stuff the pocket can hold
         units::volume max_contains_volume = 0_ml;
