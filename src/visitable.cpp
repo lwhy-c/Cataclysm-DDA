@@ -364,7 +364,7 @@ static VisitResponse visit_internal( const std::function<VisitResponse( item *, 
                 return VisitResponse::NEXT;
             }
 
-            if( node->contents.visit_internal( func, node, parent ) == VisitResponse::ABORT ) {
+            if( node->contents.visit_contents( func, node, parent ) == VisitResponse::ABORT ) {
                 return VisitResponse::ABORT;
             }
         /* intentional fallthrough */
@@ -377,11 +377,11 @@ static VisitResponse visit_internal( const std::function<VisitResponse( item *, 
     return VisitResponse::ABORT;
 }
 
-VisitResponse item_contents::visit_internal( const std::function<VisitResponse( item *, item * )>
+VisitResponse item_contents::visit_contents( const std::function<VisitResponse( item *, item * )>
         &func, item *node, item *parent )
 {
     for( item_pocket &pocket : contents ) {
-        switch( pocket.visit_internal( func, parent ) ) {
+        switch( pocket.visit_contents( func, parent ) ) {
             case VisitResponse::ABORT:
                 return VisitResponse::ABORT;
             default:
@@ -391,7 +391,7 @@ VisitResponse item_contents::visit_internal( const std::function<VisitResponse( 
     return VisitResponse::NEXT;
 }
 
-VisitResponse item_pocket::visit_internal( const std::function<VisitResponse( item *, item * )>
+VisitResponse item_pocket::visit_contents( const std::function<VisitResponse( item *, item * )>
         &func, item *parent )
 {
     for( item &e : contents ) {
