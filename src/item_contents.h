@@ -7,6 +7,7 @@
 #include "optional.h"
 #include "ret_val.h"
 #include "units.h"
+#include "visitable.h"
 
 class item;
 class item_location;
@@ -89,6 +90,10 @@ class item_contents
 
         void remove_internal( const std::function<bool( item & )> &filter,
                               int &count, std::list<item> &res );
+        // @relates visitable
+        // NOTE: upon expansion, this may need to be filtered by type enum depending on accessibility
+        VisitResponse visit_internal( const std::function<VisitResponse( item *, item * )> &func,
+                                      item *node, item *parent = nullptr );
 
         void info( std::vector<iteminfo> &info ) const;
 

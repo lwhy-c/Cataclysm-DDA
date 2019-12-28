@@ -10,6 +10,7 @@
 #include "type_id.h"
 #include "ret_val.h"
 #include "units.h"
+#include "visitable.h"
 
 class Character;
 class item;
@@ -122,6 +123,9 @@ class item_pocket
         // this is used for the visitable interface. returns true if no further visiting is required
         bool remove_internal( const std::function<bool( item & )> &filter,
                               int &count, std::list<item> &res );
+        // @relates visitable
+        VisitResponse visit_internal( const std::function<VisitResponse( item *, item * )> &func,
+                                      item *node, item *parent = nullptr );
 
         void general_info( std::vector<iteminfo> &info, int pocket_number, bool disp_pocket_number ) const;
         void contents_info( std::vector<iteminfo> &info, int pocket_number, bool disp_pocket_number ) const;

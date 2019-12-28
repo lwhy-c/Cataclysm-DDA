@@ -364,10 +364,8 @@ static VisitResponse visit_internal( const std::function<VisitResponse( item *, 
                 return VisitResponse::NEXT;
             }
 
-            for( item &e : node->contents.all_items() ) {
-                if( visit_internal( func, &e, node ) == VisitResponse::ABORT ) {
-                    return VisitResponse::ABORT;
-                }
+            if( node->contents.visit_internal( func, node, parent ) == VisitResponse::ABORT ) {
+                return VisitResponse::ABORT;
             }
         /* intentional fallthrough */
 
@@ -377,6 +375,34 @@ static VisitResponse visit_internal( const std::function<VisitResponse( item *, 
 
     /* never reached but suppresses GCC warning */
     return VisitResponse::ABORT;
+}
+
+VisitResponse item_contents::visit_internal( const std::function<VisitResponse( item *, item * )>
+        &func, item *node, item *parent )
+{
+    for( item_pocket &pocket : contents ) {
+        switch( pocket.visit_internal( func, node, parent ) ) {
+            case VisitResponse::ABORT:
+                return VisitResponse::ABORT;
+            default:
+                break;
+        }
+    }
+    return VisitResponse::NEXT;
+}
+
+VisitResponse item_pocket::visit_internal( const std::function<VisitResponse( item *, item * )>
+        &func, item *node, item *parent )
+{
+    for( item &e : contents ) {
+        switch( visit_internal( func, &e, parent ) ) {
+            case VisitResponse::ABORT:
+                return VisitResponse::ABORT;
+            default:
+                break;
+        }
+    }
+    return VisitResponse::NEXT;
 }
 
 /** @relates visitable */
