@@ -381,7 +381,7 @@ VisitResponse item_contents::visit_internal( const std::function<VisitResponse( 
         &func, item *node, item *parent )
 {
     for( item_pocket &pocket : contents ) {
-        switch( pocket.visit_internal( func, node, parent ) ) {
+        switch( pocket.visit_internal( func, parent ) ) {
             case VisitResponse::ABORT:
                 return VisitResponse::ABORT;
             default:
@@ -392,7 +392,7 @@ VisitResponse item_contents::visit_internal( const std::function<VisitResponse( 
 }
 
 VisitResponse item_pocket::visit_internal( const std::function<VisitResponse( item *, item * )>
-        &func, item *node, item *parent )
+        &func, item *parent )
 {
     for( item &e : contents ) {
         switch( visit_internal( func, &e, parent ) ) {
