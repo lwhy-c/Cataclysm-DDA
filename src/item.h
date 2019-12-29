@@ -22,6 +22,7 @@
 #include "enums.h"
 #include "flat_set.h"
 #include "io_tags.h"
+#include "item_contents.h"
 #include "item_location.h"
 #include "optional.h"
 #include "relic.h"
@@ -154,6 +155,11 @@ struct iteminfo {
                   flags Flags = no_flags, double Value = -999 );
         iteminfo( const std::string &Type, const std::string &Name, double Value );
 };
+
+iteminfo vol_to_info( const std::string &type, const std::string &left,
+                      const units::volume &vol );
+iteminfo weight_to_info( const std::string &type, const std::string &left,
+                         const units::mass &weight );
 
 inline iteminfo::flags operator|( iteminfo::flags l, iteminfo::flags r )
 {
@@ -673,17 +679,8 @@ class item : public visitable<item>
         /**
          * Puts the given item into this one, no checks are performed.
          */
-        void put_in( const item &payload );
-
-        /** Stores a newly constructed item at the end of this item's contents */
-        template<typename ... Args>
-        item &emplace_back( Args &&... args ) {
-            contents.emplace_back( std::forward<Args>( args )... );
-            if( contents.back().is_null() ) {
-                debugmsg( "Tried to emplace null item" );
-            }
-            return contents.back();
-        }
+        void put_in( const item &payload,
+                     item_pocket::pocket_type pk_type = item_pocket::pocket_type::LEGACY_CONTAINER );
 
         /**
          * Returns this item into its default container. If it does not have a default container,
@@ -1139,6 +1136,8 @@ class item : public visitable<item>
         // contents.  Otherwise, returns nullptr.
         item *get_food();
         const item *get_food() const;
+
+        void set_last_rot_check( const time_point &pt );
 
         /** What faults can potentially occur with this item? */
         std::set<fault_id> faults_potential() const;
@@ -2099,7 +2098,7 @@ class item : public visitable<item>
         static const int INFINITE_CHARGES;
 
         const itype *type;
-        std::list<item> contents;
+        item_contents contents;
         std::list<item> components;
         /** What faults (if any) currently apply to this item */
         std::set<fault_id> faults;
