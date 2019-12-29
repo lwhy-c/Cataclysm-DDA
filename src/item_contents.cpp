@@ -270,7 +270,9 @@ units::volume item_contents::item_size_modifier() const
 {
     units::volume total_vol = 0_ml;
     for( const item_pocket &pocket : contents ) {
-        total_vol += pocket.item_size_modifier();
+        if( !pocket.is_type( item_pocket::pocket_type::LEGACY_CONTAINER ) ) {
+            total_vol += pocket.item_size_modifier();
+        }
     }
     return total_vol;
 }
@@ -290,7 +292,9 @@ units::mass item_contents::item_weight_modifier() const
 {
     units::mass total_mass = 0_gram;
     for( const item_pocket &pocket : contents ) {
-        total_mass += pocket.item_weight_modifier();
+        if( !pocket.is_type( item_pocket::pocket_type::LEGACY_CONTAINER ) ) {
+            total_mass += pocket.item_weight_modifier();
+        }
     }
     return total_mass;
 }
