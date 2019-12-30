@@ -342,7 +342,11 @@ void Item_modifier::modify( item &new_item ) const
     if( contents != nullptr ) {
         Item_spawn_data::ItemList contentitems = contents->create( new_item.birthday() );
         for( item &it : contentitems ) {
-            new_item.contents.insert_legacy( it );
+            if( new_item.type->can_use( "holster" ) ) {
+                new_item.put_in( it, item_pocket::pocket_type::CONTAINER );
+            } else {
+                new_item.put_in( it );
+            }
         }
     }
 
