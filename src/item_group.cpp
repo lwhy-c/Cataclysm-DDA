@@ -331,7 +331,11 @@ void Item_modifier::modify( item &new_item ) const
     }
 
     if( !cont.is_null() ) {
-        cont.put_in( new_item );
+        if( cont.type->can_use( "holster" ) ) {
+            cont.put_in( new_item, item_pocket::pocket_type::CONTAINER );
+        } else {
+            cont.put_in( new_item );
+        }
         new_item = cont;
     }
 
