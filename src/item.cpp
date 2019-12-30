@@ -6803,9 +6803,9 @@ std::vector<item *> item::gunmods()
 {
     std::vector<item *> res;
     if( is_gun() ) {
-        for( item &e : contents.all_items() ) {
-            if( e.is_gunmod() ) {
-                res.push_back( &e );
+        for( item *e : contents.all_items_ptr() ) {
+            if( e->is_gunmod() ) {
+                res.push_back( e );
             }
         }
     }
@@ -6816,9 +6816,9 @@ std::vector<const item *> item::gunmods() const
 {
     std::vector<const item *> res;
     if( is_gun() ) {
-        for( const item &e : contents.all_items() ) {
-            if( e.is_gunmod() ) {
-                res.push_back( &e );
+        for( const item *e : contents.all_items_ptr() ) {
+            if( e->is_gunmod() ) {
+                res.push_back( e );
             }
         }
     }
