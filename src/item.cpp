@@ -7204,8 +7204,8 @@ bool item::reload( player &u, item_location loc, int qty )
         to_reload.charges = qty;
         ammo->charges -= qty;
         bool merged = false;
-        for( item &it : contents.all_items() ) {
-            if( it.merge_charges( to_reload ) ) {
+        for( item *it : contents.all_items_ptr() ) {
+            if( it->merge_charges( to_reload ) ) {
                 merged = true;
                 break;
             }
