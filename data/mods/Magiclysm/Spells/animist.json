@@ -186,5 +186,26 @@
     "spell_class": "ANIMIST",
     "energy_source": "MANA",
     "flags": [ "PERMANENT", "NO_LEGS", "CONCENTRATE" ]
+  },
+  {
+    "id": "telekinesis",
+    "type": "SPELL",
+    "name": "Telekinesis",
+    "description": "Causes a few items to shoot toward you and into your inventory.",
+    "effect": "telekinesis",
+    "min_damage": 1,
+    "max_damage": 5,
+    "damage_increment": 0.2,
+    "min_aoe": 8,
+    "max_aoe": 14,
+    "aoe_increment": 0.4,
+    "max_level": 25,
+    "base_energy_cost": 1800,
+    "spell_class": "ANIMIST",
+    "energy_source": "STAMINA",
+    "base_casting_time": 350,
+    "difficulty": 2,
+    "valid_targets": [ "ground" ],
+    "flags": [ "NO_LEGS", "NO_HANDS", "CONCENTRATE" ]
   }
 ]

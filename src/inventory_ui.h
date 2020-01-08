@@ -429,6 +429,7 @@ class inventory_selector
         void add_character_items( Character &character );
         void add_map_items( const tripoint &target );
         void add_vehicle_items( const tripoint &target );
+        void add_locations( const std::vector<item_location> &list );
         void add_nearby_items( int radius = 1 );
         /** Remove all items */
         void clear_items();

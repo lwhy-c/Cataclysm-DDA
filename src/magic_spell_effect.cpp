@@ -21,6 +21,7 @@
 #include "enums.h"
 #include "field.h"
 #include "game.h"
+#include "game_inventory.h"
 #include "item.h"
 #include "line.h"
 #include "map.h"
@@ -972,5 +973,44 @@ void spell_effect::bash( const spell &sp, Creature &caster, const tripoint &targ
         }
         // the bash already makes noise, so no need for spell::make_sound()
         g->m.bash( potential_target, sp.damage(), sp.has_flag( spell_flag::SILENT ) );
+    }
+}
+
+void spell_effect::telekinesis( const spell &sp, Creature &caster, const tripoint &target )
+{
+    const std::set<tripoint> area = spell_effect_blast( sp, caster.pos(), target, sp.aoe(), false );
+    std::vector<item_location> items;
+    for( const tripoint &potential_target : area ) {
+        if( !sp.is_valid_target( caster, potential_target ) ||
+            !g->m.accessible_items( potential_target ) ) {
+            continue;
+        }
+        for( item &it : g->m.i_at( potential_target ) ) {
+            items.push_back( item_location( map_cursor( potential_target ), &it ) );
+        }
+    }
+    int get_items = sp.damage();
+    if( caster.is_avatar() ) {
+        avatar &you = *caster.as_avatar();
+        std::vector<item_location> picked_up;
+        while( !items.empty() && get_items > 0 ) {
+            item_location loc = game_menus::inv::titled_menu(
+                                    items, you, _( "Pick up item from afar:" ) );
+            if( !loc ) {
+                if( you.query_yn( _( "Stop picking items?" ) ) ) {
+                    break;
+                }
+            } else {
+                picked_up.push_back( loc );
+                std::remove_if( items.begin(), items.end(),
+                [loc]( item_location compare ) {
+                    return loc == compare;
+                } );
+                --get_items;
+            }
+        }
+        for( item_location loc : picked_up ) {
+            loc.obtain( you );
+        }
     }
 }

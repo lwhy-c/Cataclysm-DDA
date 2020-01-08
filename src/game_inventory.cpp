@@ -221,6 +221,67 @@ item_location game_menus::inv::titled_menu( avatar &you, const std::string &titl
     return inv_internal( you, inventory_selector_preset(), title, -1, msg );
 }
 
+item_location game_menus::inv::titled_menu( const std::vector<item_location> &list, avatar &you,
+        const std::string &title, const std::string &none_message )
+{
+    const std::string msg = none_message.empty() ? _( "No items available." ) : none_message;
+    inventory_pick_selector inv_s( you, default_preset );
+
+    inv_s.set_title( title );
+    inv_s.set_display_stats( false );
+
+    std::pair<size_t, size_t> init_pair;
+    bool init_selection = false;
+
+    const std::vector<activity_id> consuming{
+        activity_id( "ACT_EAT_MENU" ),
+        activity_id( "ACT_CONSUME_FOOD_MENU" ),
+        activity_id( "ACT_CONSUME_DRINK_MENU" ),
+        activity_id( "ACT_CONSUME_MEDS_MENU" ) };
+
+    if( you.has_activity( consuming ) && you.activity.values.size() >= 2 ) {
+        init_pair.first = you.activity.values[0];
+        init_pair.second = you.activity.values[1];
+        init_selection = true;
+    }
+
+    do {
+        inv_s.clear_items();
+        inv_s.add_locations( list );
+
+        if( init_selection ) {
+            inv_s.update();
+            inv_s.select_position( init_pair );
+            init_selection = false;
+        }
+
+        if( inv_s.empty() ) {
+            const std::string msg = none_message.empty()
+                                    ? _( "No more items available." )
+                                    : none_message;
+            popup( msg, PF_GET_KEY );
+            return item_location();
+        }
+
+        item_location location = inv_s.execute();
+
+        if( inv_s.keep_open ) {
+            inv_s.keep_open = false;
+            continue;
+        }
+
+        if( you.has_activity( consuming ) ) {
+            you.activity.values.clear();
+            init_pair = inv_s.get_selection_position();
+            you.activity.values.push_back( init_pair.first );
+            you.activity.values.push_back( init_pair.second );
+        }
+
+        return location;
+
+    } while( true );
+}
+
 class armor_inventory_preset: public inventory_selector_preset
 {
     public:

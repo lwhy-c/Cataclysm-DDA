@@ -1167,6 +1167,13 @@ void inventory_selector::add_character_items( Character &character )
     }
 }
 
+void inventory_selector::add_locations( const std::vector<item_location> &list )
+{
+    for( item_location loc : list ) {
+        add_item( map_column, item_location( loc ), &loc->get_category() );
+    }
+}
+
 void inventory_selector::add_map_items( const tripoint &target )
 {
     if( g->m.accessible_items( target ) ) {
