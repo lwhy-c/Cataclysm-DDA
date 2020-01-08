@@ -533,7 +533,7 @@ void player::process_turn()
     }
 }
 
-void player::action_taken()
+void Character::action_taken()
 {
     nv_cached = false;
 }
@@ -744,7 +744,7 @@ int player::run_cost( int base_cost, bool diag ) const
     return static_cast<int>( movecost );
 }
 
-int player::swim_speed() const
+int Character::swim_speed() const
 {
     int ret;
     if( is_mounted() ) {
@@ -822,12 +822,7 @@ int player::swim_speed() const
     return ret;
 }
 
-bool player::digging() const
-{
-    return false;
-}
-
-bool player::is_on_ground() const
+bool Character::is_on_ground() const
 {
     return get_working_leg_count() < 2 || has_effect( effect_downed );
 }
@@ -861,7 +856,7 @@ double player::recoil_total() const
     return recoil + recoil_vehicle();
 }
 
-bool player::is_underwater() const
+bool Creature::is_underwater() const
 {
     return underwater;
 }
@@ -1065,12 +1060,12 @@ std::list<item *> player::get_artifact_items()
     return art_items;
 }
 
-const tripoint &player::pos() const
+const tripoint &Character::pos() const
 {
     return position;
 }
 
-int player::sight_range( int light_level ) const
+int Character::sight_range( int light_level ) const
 {
     /* Via Beer-Lambert we have:
      * light_level * (1 / exp( LIGHT_TRANSPARENCY_OPEN_AIR * distance) ) <= LIGHT_AMBIENT_LOW
@@ -1090,15 +1085,15 @@ int player::sight_range( int light_level ) const
     // int range = log(light_level * LIGHT_AMBIENT_LOW) / LIGHT_TRANSPARENCY_OPEN_AIR;
 
     // Clamp to [1, sight_max].
-    return std::max( 1, std::min( range, sight_max ) );
+    return clamp( range, 1, sight_max );
 }
 
-int player::unimpaired_range() const
+int Character::unimpaired_range() const
 {
     return std::min( sight_max, 60 );
 }
 
-bool player::overmap_los( const tripoint &omt, int sight_points )
+bool Character::overmap_los( const tripoint &omt, int sight_points )
 {
     const tripoint ompos = global_omt_location();
     if( omt.x < ompos.x - sight_points || omt.x > ompos.x + sight_points ||
@@ -1119,7 +1114,7 @@ bool player::overmap_los( const tripoint &omt, int sight_points )
     return true;
 }
 
-int player::overmap_sight_range( int light_level ) const
+int Character::overmap_sight_range( int light_level ) const
 {
     int sight = sight_range( light_level );
     if( sight < SEEX ) {
@@ -1135,9 +1130,9 @@ int player::overmap_sight_range( int light_level ) const
     // The higher up you are, the farther you can see.
     sight += std::max( 0, posz() ) * 2;
     // Mutations like Scout and Topographagnosia affect how far you can see.
-    sight += Character::mutation_value( "overmap_sight" );
+    sight += mutation_value( "overmap_sight" );
 
-    float multiplier = Character::mutation_value( "overmap_multiplier" );
+    float multiplier = mutation_value( "overmap_multiplier" );
     // Binoculars double your sight range.
     const bool has_optic = ( has_item_with_flag( "ZOOM" ) || has_bionic( bio_eye_optic ) ||
                              ( is_mounted() &&
@@ -1151,7 +1146,7 @@ int player::overmap_sight_range( int light_level ) const
 }
 
 #define MAX_CLAIRVOYANCE 40
-int player::clairvoyance() const
+int Character::clairvoyance() const
 {
     if( vision_mode_cache[VISION_CLAIRVOYANCE_SUPER] ) {
         return MAX_CLAIRVOYANCE;
@@ -1168,7 +1163,7 @@ int player::clairvoyance() const
     return 0;
 }
 
-bool player::sight_impaired() const
+bool Character::sight_impaired() const
 {
     return ( ( ( has_effect( effect_boomered ) || has_effect( effect_no_sight ) ||
                  has_effect( effect_darkness ) ) &&
@@ -1207,7 +1202,7 @@ bool player::avoid_trap( const tripoint &pos, const trap &tr ) const
     return myroll >= traproll;
 }
 
-bool player::has_alarm_clock() const
+bool Character::has_alarm_clock() const
 {
     return ( has_item_with_flag( "ALARMCLOCK", true ) ||
              ( g->m.veh_at( pos() ) &&
@@ -1215,7 +1210,7 @@ bool player::has_alarm_clock() const
              has_bionic( bio_watch ) );
 }
 
-bool player::has_watch() const
+bool Character::has_watch() const
 {
     return ( has_item_with_flag( "WATCH", true ) ||
              ( g->m.veh_at( pos() ) &&
