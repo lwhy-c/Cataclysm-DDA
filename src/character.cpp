@@ -813,6 +813,27 @@ int Character::get_working_arm_count() const
     return limb_count;
 }
 
+static item *best_container( const std::list<item *> valid_containers )
+{
+
+}
+
+bool Character::stow( item_location loc )
+{
+    std::list<item *> valid_containers;
+    if( weapon.can_contain( *loc ) ) {
+        valid_containers.push_back( &weapon );
+    }
+    for( item &it : worn ) {
+        if( it.can_contain( *loc ) ) {
+            valid_containers.push_back( &it );
+        }
+    }
+    if( valid_containers.empty() ) {
+        return false;
+    }
+}
+
 // working is defined here as not broken
 int Character::get_working_leg_count() const
 {

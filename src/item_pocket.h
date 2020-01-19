@@ -141,6 +141,10 @@ class item_pocket
         void deserialize( JsonIn &jsin );
 
         bool operator==( const item_pocket &rhs ) const;
+
+        bool has_item_stacks_with( const item &it ) const;
+        // assumes can_contain is true, please check before using this
+        bool better_container( const item_pocket &rhs, const item &it ) const;
     private:
         // the type of pocket, saved to json
         pocket_type _saved_type = pocket_type::LAST;

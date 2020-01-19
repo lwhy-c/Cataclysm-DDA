@@ -837,6 +837,10 @@ class Character : public Creature, public visitable<Character>
         bool enough_power_for( const bionic_id &bid ) const;
         // --------------- Generic Item Stuff ---------------
 
+        // stows an item into a pocket worn or wielded by the character
+        // invalidates the item_location
+        bool stow( item_location loc );
+
         struct has_mission_item_filter {
             int mission_id;
             bool operator()( const item &it ) {
