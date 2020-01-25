@@ -637,40 +637,20 @@ bool item_pocket::has_item_stacks_with( const item &it ) const
 
 bool item_pocket::better_container( const item_pocket &rhs, const item &it ) const
 {
-    if( has_item_stacks_with( it ) ) {
-        if( !rhs.has_item_stacks_with( it ) ) {
-            // if the pocket has space and the item stacks, it's a better place to put it
-            return false;
-        }
-    } else {
-        if( rhs.has_item_stacks_with( it ) ) {
-            return true;
-        }
+    const bool rhs_it_stack = rhs.has_item_stacks_with( it );
+    if( has_item_stacks_with( it ) != rhs_it_stack ) {
+        return rhs_it_stack;
     }
     if( it.is_comestible() && it.get_comestible()->spoils != 0 ) {
         // a lower spoil multiplier is better
         return rhs.data->spoil_multiplier < data->spoil_multiplier;
     }
-    if( !data->rigid ) {
-        if( rhs.data->rigid ) {
-            // rigid containers are better to fill first
-            return true;
-        }
-    } else {
-        if( !rhs.data->rigid ) {
-            return false;
-        }
+    if( data->rigid != rhs.data->rigid ) {
+        return rhs.data->rigid;
     }
     if( it.made_of( SOLID ) ) {
-        if( data->watertight ) {
-            if( !rhs.data->watertight ) {
-                // we want to save watertight containers for liquid if possible
-                return true;
-            }
-        } else {
-            if( rhs.data->watertight ) {
-                return false;
-            }
+        if( data->watertight != rhs.data->watertight ) {
+            return rhs.data->watertight;
         }
     }
     if( remaining_volume() == it.volume() ) {
