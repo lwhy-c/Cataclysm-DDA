@@ -170,20 +170,21 @@ void item_contents::deserialize( JsonIn &jsin )
 
 void item_pocket::serialize( JsonOut &json ) const
 {
-    json.start_object();
     if( !contents.empty() ) {
+        json.start_object();
+        json.member( "pocket_type", data->type );
         json.member( "contents", contents );
+        json.end_object();
     }
-    json.member( "pocket_type", data->type );
-
-    json.end_object();
 }
 
 void item_pocket::deserialize( JsonIn &jsin )
 {
     JsonObject data = jsin.get_object();
     data.read( "contents", contents );
-    data.read( "pocket_type", _saved_type );
+    int saved_type_int;
+    data.read( "pocket_type", saved_type_int );
+    _saved_type = static_cast<item_pocket::pocket_type>( saved_type_int );
 }
 
 void pocket_data::deserialize( JsonIn &jsin )
@@ -2411,6 +2412,7 @@ void item::deserialize( JsonIn &jsin )
     if( savegame_loading_version < 27 ) {
         legacy_fast_forward_time();
     }
+    contents = item_contents( type->pockets );
     // migration code, used to be std::list<item>
     if( data.has_array( "contents" ) ) {
         std::list<item> item_list;
@@ -2426,7 +2428,7 @@ void item::deserialize( JsonIn &jsin )
                 contents.insert_legacy( it );
             }
         }
-    } else {
+    } else if( data.has_object( "contents" ) ) {
         // savegame is most recent
         item_contents temp_contents;
         data.read( "contents", temp_contents );

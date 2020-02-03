@@ -52,7 +52,7 @@ bool item_contents::same_contents( const item_contents &rhs ) const
 void item_contents::combine( const item_contents &rhs )
 {
     for( const item_pocket &pocket : rhs.contents ) {
-        if( !pocket.is_valid() || pocket.saved_type() == item_pocket::pocket_type::LEGACY_CONTAINER ) {
+        if( pocket.saved_type() == item_pocket::pocket_type::LEGACY_CONTAINER ) {
             for( const item *it : pocket.all_items_top() ) {
                 insert_legacy( *it );
             }
@@ -171,17 +171,22 @@ void item_contents::remove_all_mods( Character &guy )
     }
 }
 
+bool item_contents::legacy_empty() const
+{
+    return legacy_pocket().empty();
+}
+
 bool item_contents::empty() const
 {
     if( contents.empty() ) {
         return true;
     }
     for( const item_pocket &pocket : contents ) {
-        if( pocket.empty() ) {
-            return true;
+        if( !pocket.empty() ) {
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 item &item_contents::legacy_back()
