@@ -3142,7 +3142,7 @@ void item::final_info( std::vector<iteminfo> &info, const iteminfo_query *parts,
                                      "<info>sickly green glow</info>." ) ) );
     }
 
-    if( is_brewable() || ( !contents.empty() && contents.legacy_front().is_brewable() ) ) {
+    if( is_brewable() || ( !contents.legacy_empty() && contents.legacy_front().is_brewable() ) ) {
         const item &brewed = !is_brewable() ? contents.legacy_front() : *this;
         if( parts->test( iteminfo_parts::DESCRIPTION_BREWABLE_DURATION ) ) {
             const time_duration btime = brewed.brewing_time();
@@ -5729,7 +5729,7 @@ bool item::is_brewable() const
 
 bool item::is_food_container() const
 {
-    return ( !contents.empty() && contents.legacy_front().is_food() ) || ( is_craft() &&
+    return ( !contents.legacy_empty() && contents.legacy_front().is_food() ) || ( is_craft() &&
             craft_data_->making->create_result().is_food_container() );
 }
 
@@ -5740,7 +5740,7 @@ bool item::has_temperature() const
 
 bool item::is_med_container() const
 {
-    return !contents.empty() && contents.legacy_front().is_medication();
+    return !contents.legacy_empty() && contents.legacy_front().is_medication();
 }
 
 bool item::is_corpse() const
@@ -5823,7 +5823,7 @@ void item::set_mtype( const mtype *const m )
 
 bool item::is_ammo_container() const
 {
-    return !is_magazine() && !contents.empty() && contents.legacy_front().is_ammo();
+    return !is_magazine() && !contents.legacy_empty() && contents.legacy_front().is_ammo();
 }
 
 bool item::is_melee() const

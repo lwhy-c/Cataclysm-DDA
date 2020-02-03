@@ -39,6 +39,7 @@ class item_contents
 
         ret_val<bool> can_contain( const item &it ) const;
         bool empty() const;
+        bool legacy_empty() const;
 
         // all the items contained in each pocket combined into one list
         std::list<item> all_items();
