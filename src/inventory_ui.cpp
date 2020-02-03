@@ -855,21 +855,29 @@ void inventory_column::draw( const catacurses::window &win, size_t x, size_t y )
     // Do the actual drawing
     for( size_t index = page_offset, line = 0; index < entries.size() &&
          line < entries_per_page; ++index, ++line ) {
-        const auto &entry = entries[index];
-        const auto &entry_cell_cache = get_entry_cell_cache( index );
+        const inventory_entry &entry = entries[index];
+        const inventory_column::entry_cell_cache_t &entry_cell_cache = get_entry_cell_cache( index );
 
         if( !entry ) {
             continue;
         }
 
-        int x1 = x + get_entry_indent( entry );
+        int contained_offset = 0;
+        if( entry.is_item() ) {
+            if( entry.locations.front().where() == item_location::type::container ) {
+                // indent items that are contained
+                contained_offset = 2;
+            }
+        }
+
+        int x1 = x + get_entry_indent( entry ) + contained_offset;
         int x2 = x + std::max( static_cast<int>( reserved_width - get_cells_width() ), 0 );
         int yy = y + line;
 
         const bool selected = active && is_selected( entry );
 
         if( selected && visible_cells() > 1 ) {
-            for( int hx = x1, hx_max = x + get_width(); hx < hx_max; ++hx ) {
+            for( int hx = x1, hx_max = x + get_width() + contained_offset; hx < hx_max; ++hx ) {
                 mvwputch( win, point( hx, yy ), h_white, ' ' );
             }
         }
@@ -882,7 +890,8 @@ void inventory_column::draw( const catacurses::window &win, size_t x, size_t y )
             const size_t denial_width = std::min( max_denial_width, static_cast<size_t>( utf8_width( denial,
                                                   true ) ) );
 
-            trim_and_print( win, point( x + get_width() - denial_width, yy ), denial_width, c_red, denial );
+            trim_and_print( win, point( x + get_width() - denial_width + contained_offset, yy ), denial_width,
+                            c_red, denial );
         }
 
         const size_t count = denial.empty() ? cells.size() : 1;
