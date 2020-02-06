@@ -134,9 +134,8 @@ bool item_pocket::better_pocket( const item_pocket &rhs, const item &it ) const
             return rhs.data->watertight;
         }
     }
-    if( remaining_volume() == it.volume() ) {
-        // if it fits perfectly, we're done
-        return false;
+    if( remaining_volume() == rhs.remaining_volume() ) {
+        return rhs.obtain_cost( it ) < obtain_cost( it );
     }
     // we want the least amount of remaining volume
     return rhs.remaining_volume() < remaining_volume();
@@ -766,7 +765,7 @@ ret_val<item_pocket::contain_code> item_pocket::insert_item( const item &it )
 int item_pocket::obtain_cost( const item &it ) const
 {
     if( has_item( it ) ) {
-        return data->moves;
+        return moves();
     }
     return 0;
 }
