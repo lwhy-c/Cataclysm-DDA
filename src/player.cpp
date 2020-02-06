@@ -3891,8 +3891,6 @@ hint_rating player::rate_action_use( const item &it ) const
         return HINT_IFFY; //the rating is subjective, could be argued as HINT_CANT or HINT_GOOD as well
     } else if( it.type->has_use() ) {
         return HINT_GOOD;
-    } else if( !it.is_container_empty() ) {
-        return rate_action_use( it.get_contained() );
     }
 
     return HINT_CANT;

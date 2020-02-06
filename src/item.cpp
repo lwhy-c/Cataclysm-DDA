@@ -815,6 +815,7 @@ void item::put_in( const item &payload, item_pocket::pocket_type pk_type )
             contents.insert_legacy( payload );
             break;
     }
+    on_contents_changed();
 }
 
 void item::set_var( const std::string &name, const int value )
@@ -5927,7 +5928,7 @@ bool item::is_container_full( bool allow_bucket ) const
     if( is_container_empty() ) {
         return false;
     }
-    return get_remaining_capacity_for_liquid( contents.legacy_front(), allow_bucket ) == 0;
+    return get_remaining_capacity_for_liquid( contents.all_items().front(), allow_bucket ) == 0;
 }
 
 bool item::can_unload_liquid() const
@@ -7511,8 +7512,6 @@ int item::get_remaining_capacity_for_liquid( const item &liquid, bool allow_buck
             return error( string_format( is_bucket() ?
                                          _( "That %s must be on the ground or held to hold contents!" )
                                          : _( "You can't seal that %s!" ), tname() ) );
-        } else if( !contents.empty() && contents.legacy_front().typeId() != liquid.typeId() ) {
-            return error( string_format( _( "You can't mix loads in your %s." ), tname() ) );
         }
         remaining_capacity = liquid.charges_per_volume( get_container_capacity() );
         if( !contents.empty() ) {
@@ -7748,7 +7747,6 @@ void item::fill_with( item &liquid, int amount )
     if( can_contain( liquid_copy ) ) {
         put_in( liquid_copy, item_pocket::pocket_type::CONTAINER );
         liquid.mod_charges( -amount );
-        on_contents_changed();
     } else {
         debugmsg( "tried to put a liquid in a container that cannot contain it" );
     }
@@ -8049,7 +8047,6 @@ uint64_t item::make_component_hash() const
 bool item::needs_processing() const
 {
     return active || has_flag( "RADIO_ACTIVATION" ) || has_flag( "ETHEREAL_ITEM" ) ||
-           ( is_container() && !contents.empty() && contents.legacy_front().needs_processing() ) ||
            is_artifact() || is_food();
 }
 

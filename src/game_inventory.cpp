@@ -1244,17 +1244,11 @@ class holster_inventory_preset: public weapon_inventory_preset
 item_location game_menus::inv::holster( player &p, item &holster )
 {
     const std::string holster_name = holster.tname( 1, false );
-    const auto actor = dynamic_cast<const holster_actor *>
-                       ( holster.type->get_use( "holster" )->get_actor_ptr() );
+    const use_function *use = holster.type->get_use( "holster" );
+    const holster_actor *actor = use == nullptr ? nullptr : dynamic_cast<const holster_actor *>
+                       ( use->get_actor_ptr() );
 
-    if( !actor ) {
-        const std::string msg = string_format( _( "You can't put anything into your %s." ),
-                                               holster_name );
-        popup( msg, PF_GET_KEY );
-        return item_location();
-    }
-
-    const std::string title = actor->holster_prompt.empty()
+    const std::string title = ( actor ? actor->holster_prompt.empty() : true )
                               ? _( "Holster item" )
                               : _( actor->holster_prompt );
     const std::string hint = string_format( _( "Choose an item to put into your %s" ),
