@@ -1246,7 +1246,7 @@ item_location game_menus::inv::holster( player &p, item &holster )
     const std::string holster_name = holster.tname( 1, false );
     const use_function *use = holster.type->get_use( "holster" );
     const holster_actor *actor = use == nullptr ? nullptr : dynamic_cast<const holster_actor *>
-                       ( use->get_actor_ptr() );
+                                 ( use->get_actor_ptr() );
 
     const std::string title = ( actor ? actor->holster_prompt.empty() : true )
                               ? _( "Holster item" )

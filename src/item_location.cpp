@@ -73,6 +73,9 @@ class item_location::impl
         virtual ~impl() = default;
 
         virtual type where() const = 0;
+        virtual item_location parent_item() const {
+            return item_location();
+        }
         virtual tripoint position() const = 0;
         virtual std::string describe( const Character * ) const = 0;
         virtual int obtain( Character &, int ) = 0;
@@ -494,6 +497,10 @@ class item_location::impl::item_in_container : public item_location::impl
             return idx;
         }
     public:
+        item_location parent_item() const {
+            return container;
+        }
+
         item_in_container( const item_location &container, item *which ) :
             impl( which ), container( container ) {}
 
@@ -657,6 +664,14 @@ void item_location::deserialize( JsonIn &js )
             ptr.reset( new impl::item_on_vehicle( vehicle_cursor( *veh, part ), idx ) );
         }
     }
+}
+
+item_location item_location::parent_item() const
+{
+    if( where() == type::container ) {
+        return ptr->parent_item();
+    }
+    return *this;
 }
 
 item_location::type item_location::where() const

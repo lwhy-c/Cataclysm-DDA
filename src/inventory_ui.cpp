@@ -839,6 +839,14 @@ int inventory_column::reassign_custom_invlets( const player &p, int min_invlet, 
     return cur_invlet;
 }
 
+static int num_parents( item_location loc )
+{
+    if( !loc.parent_item() ) {
+        return 0;
+    }
+    return 2 + num_parents( loc.parent_item() );
+}
+
 void inventory_column::draw( const catacurses::window &win, size_t x, size_t y ) const
 {
     if( !visible() ) {
@@ -864,10 +872,8 @@ void inventory_column::draw( const catacurses::window &win, size_t x, size_t y )
 
         int contained_offset = 0;
         if( entry.is_item() ) {
-            if( entry.locations.front().where() == item_location::type::container ) {
-                // indent items that are contained
-                contained_offset = 2;
-            }
+            // indent items that are contained
+            contained_offset = num_parents( entry.locations.front() );
         }
 
         int x1 = x + get_entry_indent( entry ) + contained_offset;

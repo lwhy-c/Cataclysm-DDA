@@ -87,6 +87,9 @@ class item_location
 
         void set_should_stack( bool should_stack ) const;
 
+        // returns the parent item, or an invalid location if it has no parent
+        item_location parent_item() const;
+
     private:
         class impl;
 
