@@ -1152,7 +1152,7 @@ static void wear()
     item_location loc = game_menus::inv::wear( u );
 
     if( loc ) {
-        u.wear( u.i_at( loc.obtain( u ) ) );
+        u.wear( *loc.obtain( u ) );
     } else {
         add_msg( _( "Never mind." ) );
     }
@@ -1164,7 +1164,7 @@ static void takeoff()
     item_location loc = game_menus::inv::take_off( u );
 
     if( loc ) {
-        u.takeoff( u.i_at( loc.obtain( u ) ) );
+        u.takeoff( *loc.obtain( u ) );
     } else {
         add_msg( _( "Never mind." ) );
     }
@@ -1181,9 +1181,7 @@ static void read()
             item spell_book = *loc.get_item();
             spell_book.get_use( "learn_spell" )->call( u, spell_book, spell_book.active, u.pos() );
         } else {
-            // calling obtain() invalidates the item pointer
-            // TODO: find a way to do this without an int index
-            u.read( u.i_at( loc.obtain( u ) ) );
+            u.read( *loc.obtain( u ) );
         }
     } else {
         add_msg( _( "Never mind." ) );
