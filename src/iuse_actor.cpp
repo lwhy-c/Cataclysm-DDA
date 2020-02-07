@@ -2565,7 +2565,7 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
             return 0;
         }
 
-        store( p, it, p.i_at( loc.obtain( p ) ) );
+        store( p, it, *loc.obtain( p ) );
     }
 
     return 0;
@@ -3854,7 +3854,7 @@ int saw_barrel_actor::use( player &p, item &it, bool t, const tripoint & ) const
         return 0;
     }
 
-    item &obj = p.i_at( loc.obtain( p ) );
+    item &obj = *loc.obtain( p );
     p.add_msg_if_player( _( "You saw down the barrel of your %s." ), obj.tname() );
     obj.contents.insert_legacy( item( "barrel_small", calendar::turn ) );
 
