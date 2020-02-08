@@ -497,7 +497,7 @@ class item_location::impl::item_in_container : public item_location::impl
             return idx;
         }
     public:
-        item_location parent_item() const {
+        item_location parent_item() const override {
             return container;
         }
 

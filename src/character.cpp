@@ -1569,7 +1569,7 @@ item_pocket *Character::best_pocket( const item &it )
     return ret;
 }
 
-item &Character::i_add( item it, bool should_stack )
+item &Character::i_add( item it, bool  /* should_stack */ )
 {
     itype_id item_type_id = it.typeId();
     last_item = item_type_id;
@@ -1596,6 +1596,9 @@ item &Character::i_add( item it, bool should_stack )
     } else {
         pocket->add( it );
         item &ret = pocket->back();
+        if( keep_invlet ) {
+            ret.invlet = it.invlet;
+        }
         ret.on_pickup( *this );
         cached_info.erase( "reloadables" );
         return ret;
@@ -1616,14 +1619,15 @@ std::list<item> Character::remove_worn_items_with( std::function<bool( item & )>
     return result;
 }
 
-std::list<item *> Character::all_items_ptr() {
+std::list<item *> Character::all_items_ptr()
+{
     std::list<item *> ret;
-    if ( has_weapon() ) {
+    if( has_weapon() ) {
         ret.push_back( &weapon );
         std::list<item *> weapon_internal_items{ weapon.contents.all_items_ptr() };
         ret.insert( ret.end(), weapon_internal_items.begin(), weapon_internal_items.end() );
     }
-    for ( item &w : worn ) {
+    for( item &w : worn ) {
         ret.push_back( &w );
         std::list<item *> worn_internal_items{ w.contents.all_items_ptr() };
         ret.insert( ret.end(), worn_internal_items.begin(), worn_internal_items.end() );
@@ -1637,16 +1641,16 @@ item *Character::invlet_to_item( const int linvlet )
     // of type int and they can become valid, but different characters when casted to char.
     // Example: KEY_NPAGE (returned when the player presses the page-down key) is 0x152,
     // casted to char would yield 0x52, which happens to be 'R', a valid invlet.
-    if ( linvlet > std::numeric_limits<char>::max() || linvlet < std::numeric_limits<char>::min() ) {
+    if( linvlet > std::numeric_limits<char>::max() || linvlet < std::numeric_limits<char>::min() ) {
         return nullptr;
     }
     const char invlet = static_cast<char>( linvlet );
-    if ( is_npc() ) {
+    if( is_npc() ) {
         DebugLog( D_WARNING, D_GAME ) << "Why do you need to call Character::invlet_to_position on npc " <<
-            name;
+                                      name;
     }
-    for ( item *it : all_items_ptr() ) {
-        if ( it->invlet == invlet ) {
+    for( item *it : all_items_ptr() ) {
+        if( it->invlet == invlet ) {
             return it;
         }
     }

@@ -4928,7 +4928,7 @@ int item::get_encumber( const Character &p ) const
 }
 
 int item::get_encumber_when_containing(
-    const Character &p, const units::volume &contents_volume ) const
+    const Character &p, const units::volume & /* contents_volume */ ) const
 {
     const islot_armor *t = find_armor_data();
     if( t == nullptr ) {

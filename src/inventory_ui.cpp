@@ -2119,6 +2119,40 @@ void inventory_drop_selector::process_selected( int &count,
     count = 0;
 }
 
+void inventory_drop_selector::deselect_contained_items()
+{
+    std::vector<inventory_entry *> selected = get_active_column().get_all_selected();
+    std::vector<item_location> container;
+    std::vector<inventory_entry *> contained;
+    for( inventory_entry *entry : selected ) {
+        if( !entry->is_item() ) {
+            continue;
+        }
+        item_location loc_front = entry->locations.front();
+        if( loc_front == loc_front.parent_item() ) {
+            container.push_back( loc_front );
+        } else {
+            contained.push_back( entry );
+        }
+    }
+    for( inventory_entry *entry : contained ) {
+        for( auto iter = selected.begin(); iter != selected.end(); ++iter ) {
+            bool found = false;
+            for( const item_location &loc : container ) {
+                if( loc == entry->locations.front() ) {
+                    iter = selected.erase( iter );
+                    found = true;
+                    break;
+                }
+            }
+            if( found ) {
+                continue;
+            }
+            ++iter;
+        }
+    }
+}
+
 drop_locations inventory_drop_selector::execute()
 {
     int count = 0;
@@ -2184,6 +2218,7 @@ drop_locations inventory_drop_selector::execute()
             }
 
             count = 0;
+            deselect_contained_items();
         } else if( input.action == "CONFIRM" ) {
             if( dropping.empty() ) {
                 popup_getkey( _( "No items were selected.  Use %s to select them." ),
