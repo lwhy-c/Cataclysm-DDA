@@ -841,7 +841,7 @@ int inventory_column::reassign_custom_invlets( const player &p, int min_invlet, 
 
 static int num_parents( item_location loc )
 {
-    if( !loc.parent_item() ) {
+    if( loc.parent_item().where() != item_location::type::container ) {
         return 0;
     }
     return 2 + num_parents( loc.parent_item() );
