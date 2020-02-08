@@ -542,16 +542,16 @@ class item_location::impl::item_in_container : public item_location::impl
             container->contents.remove_item( *target() );
         }
 
-        int obtain( Character &ch, int qty ) override {
+        item_location obtain( Character &ch, int qty ) override {
             ch.mod_moves( -obtain_cost( ch, qty ) );
 
             item obj = target()->split( qty );
             if( !obj.is_null() ) {
-                return ch.get_item_position( &ch.i_add( obj, should_stack ) );
+                return item_location( ch, &ch.i_add( obj, should_stack ) );
             } else {
-                int inv = ch.get_item_position( &ch.i_add( *target(), should_stack ) );
+                item *inv = &ch.i_add( *target(), should_stack );
                 remove_item();
-                return inv;
+                return item_location( ch, inv );
             }
         }
 
