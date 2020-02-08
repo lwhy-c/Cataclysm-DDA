@@ -700,7 +700,7 @@ class inventory_drop_selector : public inventory_multiselector
 
     private:
         void deselect_contained_items();
-        std::map<const item *, int> dropping;
+        std::vector<std::pair<item_location, int>> dropping;
         size_t max_chosen_count;
 };
 

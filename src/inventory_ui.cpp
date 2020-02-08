@@ -2121,34 +2121,38 @@ void inventory_drop_selector::process_selected( int &count,
 
 void inventory_drop_selector::deselect_contained_items()
 {
-    std::vector<inventory_entry *> selected = get_active_column().get_all_selected();
     std::vector<item_location> container;
-    std::vector<inventory_entry *> contained;
-    for( inventory_entry *entry : selected ) {
-        if( !entry->is_item() ) {
-            continue;
-        }
-        item_location loc_front = entry->locations.front();
+    std::vector<item_location> contained;
+    for( std::pair<item_location, int> &drop : dropping ) {
+        item_location loc_front = drop.first;
         if( loc_front == loc_front.parent_item() ) {
             container.push_back( loc_front );
         } else {
-            contained.push_back( entry );
+            contained.push_back( loc_front );
         }
     }
-    for( inventory_entry *entry : contained ) {
-        for( auto iter = selected.begin(); iter != selected.end(); ++iter ) {
-            bool found = false;
-            for( const item_location &loc : container ) {
-                if( loc == entry->locations.front() ) {
-                    iter = selected.erase( iter );
-                    found = true;
-                    break;
+    for( item_location loc_contained : contained ) {
+        for( item_location loc_container : container ) {
+            if( loc_contained.parent_item() == loc_container ) {
+                for( auto iter = dropping.begin(); iter != dropping.end(); ) {
+                    if( iter->first == loc_contained ) {
+                        for( inventory_entry *selected : get_active_column().get_entries( []( const inventory_entry &
+                        entry ) {
+                        return entry.chosen_count > 0;
+                    } ) ) {
+                            if( !selected->is_item() ) {
+                                continue;
+                            }
+                            if( selected->locations.front() == loc_contained ) {
+                                selected->chosen_count = 0;
+                            }
+                        }
+                        iter = dropping.erase( iter );
+                    } else {
+                        ++iter;
+                    }
                 }
             }
-            if( found ) {
-                continue;
-            }
-            ++iter;
         }
     }
 }
@@ -2210,6 +2214,7 @@ drop_locations inventory_drop_selector::execute()
                         set_chosen_count( *elem, 0 );
                     }
                 }
+                deselect_contained_items();
                 // Select the entered amount
             } else {
                 for( const auto &elem : selected ) {
@@ -2218,7 +2223,6 @@ drop_locations inventory_drop_selector::execute()
             }
 
             count = 0;
-            deselect_contained_items();
         } else if( input.action == "CONFIRM" ) {
             if( dropping.empty() ) {
                 popup_getkey( _( "No items were selected.  Use %s to select them." ),
@@ -2241,9 +2245,8 @@ drop_locations inventory_drop_selector::execute()
 
     drop_locations dropped_pos_and_qty;
 
-    for( const std::pair<const item *const, int> &drop_pair : dropping ) {
-        item_location loc( u, const_cast<item *>( drop_pair.first ) );
-        dropped_pos_and_qty.push_back( std::make_pair( loc, drop_pair.second ) );
+    for( const std::pair<item_location, int> &drop_pair : dropping ) {
+        dropped_pos_and_qty.push_back( drop_pair );
     }
 
     return dropped_pos_and_qty;
@@ -2251,17 +2254,20 @@ drop_locations inventory_drop_selector::execute()
 
 void inventory_drop_selector::set_chosen_count( inventory_entry &entry, size_t count )
 {
-    const item *it = &*entry.any_item();
+    const item_location &it = entry.any_item();
 
     if( count == 0 ) {
         entry.chosen_count = 0;
-        const auto iter = dropping.find( it );
-        if( iter != dropping.end() ) {
-            dropping.erase( iter );
+        for( auto iter = dropping.begin(); iter != dropping.end(); ) {
+            if( iter->first == it ) {
+                dropping.erase( iter );
+            } else {
+                ++iter;
+            }
         }
     } else {
         entry.chosen_count = std::min( std::min( count, max_chosen_count ), entry.get_available_count() );
-        dropping[it] = entry.chosen_count;
+        dropping.emplace_back( it, entry.chosen_count );
     }
 
     on_change( entry );
@@ -2270,8 +2276,8 @@ void inventory_drop_selector::set_chosen_count( inventory_entry &entry, size_t c
 inventory_selector::stats inventory_drop_selector::get_raw_stats() const
 {
     return get_weight_and_volume_stats(
-               u.weight_carried_with_tweaks( { dropping } ),
+               u.weight_carried_with_tweaks( dropping ),
                u.weight_capacity(),
-               u.volume_carried_with_tweaks( { dropping } ),
+               u.volume_carried_with_tweaks( dropping ),
                u.volume_capacity() );
 }

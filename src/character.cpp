@@ -1992,7 +1992,7 @@ std::vector<item_location> Character::find_reloadables()
 
 units::mass Character::weight_carried() const
 {
-    return weight_carried_with_tweaks( {} );
+    return weight_carried_with_tweaks( item_tweaks() );
 }
 
 int Character::best_nearby_lifting_assist() const
@@ -2014,6 +2014,16 @@ int Character::best_nearby_lifting_assist( const tripoint &world_pos ) const
                        map_selector( this->pos(), PICKUP_RANGE ).max_quality( LIFT ),
                        vehicle_selector( world_pos, 4, true, true ).max_quality( LIFT )
                      } );
+}
+
+units::mass Character::weight_carried_with_tweaks( const std::vector<std::pair<item_location, int>>
+        &locations ) const
+{
+    std::map<const item *, int> dropping;
+    for( const std::pair<const item_location, int> &location_pair : locations ) {
+        dropping.emplace( location_pair.first.get_item(), location_pair.second );
+    }
+    return weight_carried_with_tweaks( { dropping } );
 }
 
 units::mass Character::weight_carried_with_tweaks( const item_tweaks &tweaks ) const
@@ -2065,6 +2075,17 @@ units::mass Character::weight_carried_with_tweaks( const item_tweaks &tweaks ) c
     }
 
     return ret;
+}
+
+units::volume Character::volume_carried_with_tweaks( const
+        std::vector<std::pair<item_location, int>>
+        &locations ) const
+{
+    std::map<const item *, int> dropping;
+    for( const std::pair<const item_location, int> &location_pair : locations ) {
+        dropping.emplace( location_pair.first.get_item(), location_pair.second );
+    }
+    return volume_carried_with_tweaks( { dropping } );
 }
 
 units::volume Character::volume_carried_with_tweaks( const item_tweaks &tweaks ) const
