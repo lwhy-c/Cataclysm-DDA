@@ -2133,23 +2133,18 @@ void inventory_drop_selector::deselect_contained_items()
     }
     for( item_location loc_contained : contained ) {
         for( item_location loc_container : container ) {
-            if( loc_contained.parent_item() == loc_container ) {
-                for( auto iter = dropping.begin(); iter != dropping.end(); ) {
-                    if( iter->first == loc_contained ) {
-                        for( inventory_entry *selected : get_active_column().get_entries( []( const inventory_entry &
-                        entry ) {
-                        return entry.chosen_count > 0;
-                    } ) ) {
-                            if( !selected->is_item() ) {
-                                continue;
-                            }
-                            if( selected->locations.front() == loc_contained ) {
-                                selected->chosen_count = 0;
-                            }
+            if( loc_container->has_item( *loc_contained ) ) {
+                for( inventory_column *col : get_all_columns() ) {
+                    for( inventory_entry *selected : col->get_entries( []( const inventory_entry &
+                    entry ) {
+                    return entry.chosen_count > 0;
+                } ) ) {
+                        if( !selected->is_item() ) {
+                            continue;
                         }
-                        iter = dropping.erase( iter );
-                    } else {
-                        ++iter;
+                        if( selected->locations.front() == loc_contained ) {
+                            set_chosen_count( *selected, 0 );
+                        }
                     }
                 }
             }

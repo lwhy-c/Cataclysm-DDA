@@ -698,7 +698,7 @@ bool item_pocket::has_item( const item &it ) const
 {
     return contents.end() !=
     std::find_if( contents.begin(), contents.end(), [&it]( const item & e ) {
-        return &it == &e;
+        return &it == &e || e.has_item( it );
     } );
 }
 
