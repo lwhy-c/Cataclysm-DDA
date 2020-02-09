@@ -1591,6 +1591,10 @@ item &Character::i_add( item it, bool  /* should_stack */ )
     }
     item_pocket *pocket = best_pocket( it );
     if( pocket == nullptr ) {
+        if( !has_weapon() ) {
+            weapon = it;
+            return weapon;
+        }
         debugmsg( "no space to add item. dropping" );
         return g->m.add_item_or_charges( pos(), it );
     } else {
@@ -6636,6 +6640,24 @@ bool Character::dispose_item( item_location &&obj, const std::string &prompt )
     std::vector<dispose_option> opts;
 
     const bool bucket = obj->is_bucket_nonempty();
+
+    opts.emplace_back( dispose_option{
+        bucket ? _( "Spill contents and store in inventory" ) : _( "Store in inventory" ),
+        can_pickVolume( *obj ), '1',
+        item_handling_cost( *obj ),
+        [this, bucket, &obj] {
+            if( bucket && !obj->spill_contents( *this ) )
+            {
+                return false;
+            }
+
+            moves -= item_handling_cost( *obj );
+            this->i_add( *obj );
+            obj.remove_item();
+            return true;
+        }
+    } );
+
 
     opts.emplace_back( dispose_option{
         _( "Drop item" ), true, '2', 0, [this, &obj] {

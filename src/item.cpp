@@ -6098,6 +6098,10 @@ double item::calculate_by_enchantment_wield( double modify, enchantment::mod val
 
 bool item::can_contain( const item &it ) const
 {
+    if ( this == &it ) {
+        // does the set of all sets contain itself?
+        return false;
+    }
     for( const item &it : contents.all_items() ) {
         if( it.contents.can_contain_rigid( it ).success() ) {
             return true;
