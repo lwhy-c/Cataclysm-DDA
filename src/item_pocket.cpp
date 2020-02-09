@@ -433,26 +433,29 @@ void item_pocket::general_info( std::vector<iteminfo> &info, int pocket_number,
 
     if( data->type != LEGACY_CONTAINER ) {
         if( disp_pocket_number ) {
-            info.emplace_back( "DESCRIPTION", _( "Pocket %d:" ), pocket_number );
+            const std::string pocket_translate = _( "Pocket" );
+            const std::string pocket_num = string_format( "%s %d:", pocket_translate, pocket_number );
+            info.emplace_back( "DESCRIPTION", pocket_num );
         }
         if( data->rigid ) {
             info.emplace_back( "DESCRIPTION", _( "This pocket is <info>rigid</info>." ) );
         }
         if( data->min_item_volume > 0_ml ) {
-            info.emplace_back( vol_to_info( "DESCRIPTION",
-                                            _( "Minimum volume of item allowed:" ),
-                                            data->min_item_volume ) );
+            const std::string min_vol_translation = _( "Minimum volume of item allowed:" );
+            info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", min_vol_translation,
+                               vol_to_string( data->min_item_volume ) ) );
         }
-        info.emplace_back( vol_to_info( "DESCRIPTION",
-                                        _( "Volume Capacity:" ),
-                                        data->max_contains_volume ) );
-        info.emplace_back( weight_to_info( "DESCRIPTION",
-                                           _( "Weight Capacity:" ),
-                                           data->max_contains_weight ) );
 
-        info.emplace_back( "DESCRIPTION",
-                           _( "This pocket takes <neutral>%d</neutral> base moves to take an item out." ),
-                           data->moves );
+        const std::string max_vol_translation = _( "Volume Capacity:" );
+        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", max_vol_translation,
+                           vol_to_string( data->max_contains_volume ) ) );
+        const std::string max_weight_translation = _( "Weight Capacity:" );
+        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", max_weight_translation,
+                           weight_to_string( data->max_contains_weight ) ) );
+
+        const std::string base_moves_translation = _( "Base moves to take an item out:" );
+        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%d</neutral>", base_moves_translation,
+                           data->moves ) );
 
         if( data->watertight ) {
             info.emplace_back( "DESCRIPTION",
@@ -490,7 +493,10 @@ void item_pocket::contents_info( std::vector<iteminfo> &info, int pocket_number,
 
     insert_separation_line( info );
     if( disp_pocket_number ) {
-        info.emplace_back( "DESCRIPTION", _( "<bold>Pocket %d</bold>" ), pocket_number );
+        const std::string pocket_translation = _( "Pocket" );
+        const std::string pock_num = string_format( "<bold>%s %d</bold>", pocket_translation,
+                                     pocket_number );
+        info.emplace_back( "DESCRIPTION", pock_num );
     }
     if( contents.empty() ) {
         info.emplace_back( "DESCRIPTION", _( "This pocket is empty." ) );
