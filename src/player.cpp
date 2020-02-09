@@ -3494,8 +3494,7 @@ player::wear( item &to_wear, bool interactive )
         weapon = item();
         was_weapon = true;
     } else {
-        inv.remove_item( &to_wear );
-        inv.restack( *this );
+        remove_item( to_wear );
         was_weapon = false;
     }
 
@@ -3504,7 +3503,7 @@ player::wear( item &to_wear, bool interactive )
         if( was_weapon ) {
             weapon = to_wear_copy;
         } else {
-            inv.add_item( to_wear_copy, true );
+            i_add( to_wear_copy );
         }
         return cata::nullopt;
     }
@@ -3563,7 +3562,7 @@ bool player::takeoff( item &it, std::list<item> *res )
 
     if( res == nullptr ) {
         iter->on_takeoff( *this );
-        inv.add_item_keep_invlet( it );
+        i_add( it );
     } else {
         iter->on_takeoff( *this );
         res->push_back( it );
@@ -3926,10 +3925,10 @@ void player::reassign_item( item &it, int invlet )
 {
     bool remove_old = true;
     if( invlet ) {
-        item &prev = *invlet_to_item( invlet );
-        if( !prev.is_null() ) {
-            remove_old = it.typeId() != prev.typeId();
-            inv.reassign_item( prev, it.invlet, remove_old );
+        item *prev = invlet_to_item( invlet );
+        if( prev != nullptr ) {
+            remove_old = it.typeId() != prev->typeId();
+            inv.reassign_item( *prev, it.invlet, remove_old );
         }
     }
 
