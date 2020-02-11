@@ -4,6 +4,7 @@
 
 #include "activity_handlers.h"
 #include "activity_type.h"
+#include "cata_string_consts.h"
 #include "construction.h"
 #include "map.h"
 #include "game.h"
@@ -22,6 +23,24 @@ player_activity::player_activity( activity_id t, int turns, int Index, int pos,
     position( pos ), name( name_in ),
     placement( tripoint_min ), auto_resume( false )
 {
+}
+
+void player_activity::migrate_item_position( Character &guy )
+{
+    const bool simple_action_replace =
+        type == ACT_FIRSTAID || type == ACT_GAME ||
+        type == ACT_PICKAXE || type == ACT_START_FIRE ||
+        type == ACT_HAND_CRANK || type == ACT_VIBE ||
+        type == ACT_OXYTORCH || type == ACT_FISH ||
+        type == ACT_ATM;
+
+    if( simple_action_replace ) {
+        targets.push_back( item_location( guy, &guy.i_at( position ) ) );
+    } else if( type == ACT_GUNMOD_ADD ) {
+        // this activity has two indices; "position" = gun and "values[0]" = mod
+        targets.push_back( item_location( guy, &guy.i_at( position ) ) );
+        targets.push_back( item_location( guy, &guy.i_at( values[0] ) ) );
+    }
 }
 
 void player_activity::set_to_null()

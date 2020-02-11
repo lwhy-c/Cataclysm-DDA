@@ -1468,7 +1468,7 @@ void activity_handlers::firstaid_finish( player_activity *act, player *p )
 {
     static const std::string iuse_name_string( "heal" );
 
-    item &it = p->i_at( act->position );
+    item &it = *act->targets.front();
     item *used_tool = it.get_usable_item( iuse_name_string );
     if( used_tool == nullptr ) {
         debugmsg( "Lost tool used for healing" );
@@ -1572,7 +1572,7 @@ void activity_handlers::generic_game_do_turn( player_activity * /*act*/, player 
 
 void activity_handlers::game_do_turn( player_activity *act, player *p )
 {
-    item &game_item = p->i_at( act->position );
+    item &game_item = *act->targets.front();
 
     //Deduct 1 battery charge for every minute spent playing
     if( calendar::once_every( 1_minutes ) ) {
@@ -1730,7 +1730,7 @@ void activity_handlers::pickaxe_do_turn( player_activity *act, player * )
 void activity_handlers::pickaxe_finish( player_activity *act, player *p )
 {
     const tripoint pos( act->placement );
-    item &it = p->i_at( act->position );
+    item &it = *act->targets.front();
     // Invalidate the activity early to prevent a query from mod_pain()
     act->set_to_null();
     const int helpersize = g->u.get_num_crafting_helpers( 3 );
@@ -1926,7 +1926,7 @@ void activity_handlers::start_fire_finish( player_activity *act, player *p )
 {
     static const std::string iuse_name_string( "firestarter" );
 
-    item &it = p->i_at( act->position );
+    item &it = *act->targets.front();
     item *used_tool = it.get_usable_item( iuse_name_string );
     if( used_tool == nullptr ) {
         debugmsg( "Lost tool used for starting fire" );
@@ -1962,7 +1962,7 @@ void activity_handlers::start_fire_do_turn( player_activity *act, player *p )
         }
     }
 
-    item &firestarter = p->i_at( act->position );
+    item &firestarter = *act->targets.front();
     if( firestarter.has_flag( flag_REQUIRES_TINDER ) ) {
         if( !g->m.tinder_at( act->placement ) ) {
             p->add_msg_if_player( m_info, _( "This item requires tinder to light." ) );
@@ -2096,7 +2096,7 @@ void activity_handlers::hand_crank_do_turn( player_activity *act, player *p )
     // to 10 watt (suspicious claims from some manufacturers) sustained output.
     // It takes 2.4 minutes to produce 1kj at just slightly under 7 watts (25 kj per hour)
     // time-based instead of speed based because it's a sustained activity
-    item &hand_crank_item = p ->i_at( act->position );
+    item &hand_crank_item = *act->targets.front();
 
     if( calendar::once_every( 144_seconds ) ) {
         p->mod_fatigue( 1 );
@@ -2119,7 +2119,7 @@ void activity_handlers::vibe_do_turn( player_activity *act, player *p )
     //Using a vibrator takes time (10 minutes), not speed
     //Linear increase in morale during action with a small boost at end
     //Deduct 1 battery charge for every minute in use, or vibrator is much less effective
-    item &vibrator_item = p->i_at( act->position );
+    item &vibrator_item = *act->targets.front();
 
     if( ( p->is_wearing( "rebreather" ) ) || ( p->is_wearing( "rebreather_xl" ) ) ||
         ( p->is_wearing( "mask_h20survivor" ) ) ) {
@@ -2226,7 +2226,7 @@ void activity_handlers::oxytorch_do_turn( player_activity *act, player *p )
         return;
     }
 
-    item &it = p->i_at( act->position );
+    item &it = *act->targets.front();
     // act->values[0] is the number of charges yet to be consumed
     const int charges_used = std::min( act->values[0], it.ammo_required() );
 
@@ -2246,7 +2246,7 @@ void activity_handlers::oxytorch_finish( player_activity *act, player *p )
     const ter_id ter = g->m.ter( pos );
 
     // fast players might still have some charges left to be consumed
-    p->i_at( act->position ).ammo_consume( act->values[0], p->pos() );
+    act->targets.front()->ammo_consume( act->values[0], p->pos() );
 
     if( g->m.furn( pos ) == f_rack ) {
         g->m.furn_set( pos, f_null );
@@ -2644,8 +2644,8 @@ void activity_handlers::gunmod_add_finish( player_activity *act, player *p )
         return;
     }
 
-    item &gun = p->i_at( act->position );
-    item &mod = p->i_at( act->values[0] );
+    item &gun = *act->targets.at( 0 );
+    item &mod = *act->targets.at( 1 );
 
     // chance of success (%)
     const int roll = act->values[1];
@@ -2892,7 +2892,7 @@ static void rod_fish( player *p, std::vector<monster *> &fishables )
 
 void activity_handlers::fish_do_turn( player_activity *act, player *p )
 {
-    item &it = p->i_at( act->position );
+    item &it = *act->targets.front();
     int fish_chance = 1;
     int survival_skill = p->get_skill_level( skill_survival );
     if( it.has_flag( flag_FISH_POOR ) ) {
