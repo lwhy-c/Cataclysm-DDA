@@ -22,6 +22,7 @@
 #include "enums.h"
 #include "flat_set.h"
 #include "io_tags.h"
+#include "item_contents.h"
 #include "item_location.h"
 #include "optional.h"
 #include "relic.h"
@@ -683,16 +684,6 @@ class item : public visitable<item>
          */
         void put_in( const item &payload );
 
-        /** Stores a newly constructed item at the end of this item's contents */
-        template<typename ... Args>
-        item &emplace_back( Args &&... args ) {
-            contents.emplace_back( std::forward<Args>( args )... );
-            if( contents.back().is_null() ) {
-                debugmsg( "Tried to emplace null item" );
-            }
-            return contents.back();
-        }
-
         /**
          * Returns this item into its default container. If it does not have a default container,
          * returns this. It's intended to be used like \code newitem = newitem.in_its_container();\endcode
@@ -700,6 +691,8 @@ class item : public visitable<item>
         item in_its_container() const;
         item in_container( const itype_id &container_type ) const;
         /*@}*/
+
+        bool item_has_uses_recursive() const;
 
         /*@{*/
         /**
@@ -1756,10 +1749,6 @@ class item : public visitable<item>
         item *magazine_current();
         const item *magazine_current() const;
 
-        /** Normalizes an item to use the new magazine system. Idempotent if item already converted.
-         *  @return items that were created as a result of the conversion (excess ammo or magazines) */
-        std::vector<item> magazine_convert();
-
         /** Returns all gunmods currently attached to this item (always empty if item not a gun) */
         std::vector<item *> gunmods();
         std::vector<const item *> gunmods() const;
@@ -2115,7 +2104,7 @@ class item : public visitable<item>
         static const int INFINITE_CHARGES;
 
         const itype *type;
-        std::list<item> contents;
+        item_contents contents;
         std::list<item> components;
         /** What faults (if any) currently apply to this item */
         std::set<fault_id> faults;

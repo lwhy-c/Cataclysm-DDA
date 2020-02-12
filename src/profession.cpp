@@ -400,7 +400,7 @@ std::list<item> profession::items( bool male, const std::vector<trait_id> &trait
     }
     for( item &it : result ) {
         clear_faults( it );
-        if( it.is_holster() && it.contents.size() == 1 ) {
+        if( it.is_holster() && it.contents.num_item_stacks() == 1 ) {
             clear_faults( it.contents.front() );
         }
         if( it.has_flag( "VARSIZE" ) ) {
@@ -626,8 +626,8 @@ std::vector<item> json_item_substitution::get_substitution( const item &it,
     auto iter = substitutions.find( it.typeId() );
     std::vector<item> ret;
     if( iter == substitutions.end() ) {
-        for( const item &con : it.contents ) {
-            const auto sub = get_substitution( con, traits );
+        for( const item *con : it.contents.all_items_top() ) {
+            const auto sub = get_substitution( *con, traits );
             ret.insert( ret.end(), sub.begin(), sub.end() );
         }
         return ret;
