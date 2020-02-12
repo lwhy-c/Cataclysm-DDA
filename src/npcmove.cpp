@@ -3719,12 +3719,12 @@ void npc::mug_player( player &mark )
     item *to_steal = nullptr;
     invslice slice = mark.inv.slice();
     for( std::list<item> *stack : slice ) {
-        item *front_stack = &stack->front();
-        if( value( *front_stack ) >= best_value &&
-            can_pickVolume( *front_stack, true ) &&
-            can_pickWeight( *front_stack, true ) ) {
-            best_value = value( *front_stack );
-            to_steal = front_stack;
+        item &front_stack = stack->front();
+        if( value( front_stack ) >= best_value &&
+            can_pickVolume( front_stack, true ) &&
+            can_pickWeight( front_stack, true ) ) {
+            best_value = value( front_stack );
+            to_steal = &front_stack;
         }
     }
     if( to_steal == nullptr ) { // Didn't find anything worthwhile!
