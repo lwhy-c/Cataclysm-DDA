@@ -71,6 +71,7 @@ void clear_character( player &dummy )
 
     const tripoint spot( 60, 60, 0 );
     g->place_player( spot );
+    dummy.reset_activity_level();
 }
 
 void clear_avatar()
