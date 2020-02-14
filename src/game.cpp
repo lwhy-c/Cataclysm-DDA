@@ -8360,7 +8360,7 @@ void game::reload( item_location &loc, bool prompt, bool empty )
 
     bool use_loc = true;
     if( !it->has_flag( "ALLOWS_REMOTE_USE" ) ) {
-        it = &u.i_at( loc.obtain( u ) );
+        it = loc.obtain( u ).get_item();
         use_loc = false;
     }
 
@@ -8555,6 +8555,11 @@ void game::wield( item_location &loc )
     loc.remove_item();
     if( !u.wield( to_wield ) ) {
         switch( location_type ) {
+            case item_location::type::container:
+                // this will not cause things to spill, as it is inside another item
+                loc = loc.obtain( g->u );
+                wield( loc );
+                break;
             case item_location::type::character:
                 if( worn_index != INT_MIN ) {
                     auto it = u.worn.begin();

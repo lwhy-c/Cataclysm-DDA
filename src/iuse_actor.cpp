@@ -183,6 +183,8 @@ int iuse_transform::use( player &p, item &it, bool t, const tripoint &pos ) cons
 
     item obj_copy( it );
     item *obj;
+    // defined here to allow making a new item assigned to the pointer
+    item obj_it;
     if( container.empty() ) {
         obj = &it.convert( target );
         if( ammo_qty >= 0 || !random_ammo_qty.empty() ) {
@@ -203,7 +205,9 @@ int iuse_transform::use( player &p, item &it, bool t, const tripoint &pos ) cons
         }
     } else {
         it.convert( container );
-        obj = &it.emplace_back( target, calendar::turn, std::max( ammo_qty, 1 ) );
+        obj_it = item( target, calendar::turn, std::max( ammo_qty, 1 ) );
+        obj = &obj_it;
+        it.put_in( *obj );
     }
     if( p.is_worn( *obj ) ) {
         p.reset_encumbrance();
@@ -1350,8 +1354,8 @@ int firestarter_actor::use( player &p, item &it, bool t, const tripoint &spos ) 
     const int potential_skill_gain =
         moves_modifier + moves_cost_fast / 100.0 + 2;
     p.assign_activity( ACT_START_FIRE, moves, potential_skill_gain,
-                       p.get_item_position( &it ),
-                       it.tname() );
+                       0, it.tname() );
+    p.activity.targets.push_back( item_location( p, &it ) );
     p.activity.values.push_back( g->natural_light_level( pos.z ) );
     p.activity.placement = pos;
     // charges to use are handled by the activity
@@ -2563,15 +2567,16 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
     int pos = 0;
     std::vector<std::string> opts;
 
-    if( static_cast<int>( it.contents.size() ) < multi ) {
+    if( static_cast<int>( it.contents.num_item_stacks() ) < multi ) {
         std::string prompt = holster_prompt.empty() ? _( "Holster item" ) : _( holster_prompt );
         opts.push_back( prompt );
         pos = -1;
     }
 
-    std::transform( it.contents.begin(), it.contents.end(), std::back_inserter( opts ),
-    []( const item & elem ) {
-        return string_format( _( "Draw %s" ), elem.display_name() );
+    std::list<item *> top_contents{ it.contents.all_items_top() };
+    std::transform( top_contents.begin(), top_contents.end(), std::back_inserter( opts ),
+    []( const item * elem ) {
+        return string_format( _( "Draw %s" ), elem->display_name() );
     } );
 
     item *internal_item = nullptr;
@@ -2581,11 +2586,11 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
             pos = -2;
         } else {
             pos += ret;
-            if( opts.size() != it.contents.size() ) {
+            if( opts.size() != it.contents.num_item_stacks() ) {
                 ret--;
             }
-            auto iter = std::next( it.contents.begin(), ret );
-            internal_item = &*iter;
+            auto iter = std::next( top_contents.begin(), ret );
+            internal_item = *iter;
         }
     } else {
         internal_item = &it.contents.front();
@@ -2612,7 +2617,7 @@ int holster_actor::use( player &p, item &it, bool, const tripoint & ) const
             return 0;
         }
 
-        store( p, it, p.i_at( loc.obtain( p ) ) );
+        store( p, it, *loc.obtain( p ) );
     }
 
     return 0;
@@ -2775,7 +2780,7 @@ int bandolier_actor::use( player &p, item &it, bool, const tripoint & ) const
     actions.emplace_back( [&] {
         if( p.i_add_or_drop( it.contents.front() ) )
         {
-            it.contents.erase( it.contents.begin() );
+            it.remove_item( it.contents.front() );
         } else
         {
             p.add_msg_if_player( _( "Never mind." ) );
@@ -3263,7 +3268,9 @@ static bool damage_item( player &pl, item_location &fix )
         if( fix.where() == item_location::type::character ) {
             pl.i_rem_keep_contents( pl.get_item_position( fix.get_item() ) );
         } else {
-            put_into_vehicle_or_drop( pl, item_drop_reason::deliberate, fix->contents, fix.position() );
+            for( const item *it : fix->contents.all_items_top() ) {
+                put_into_vehicle_or_drop( pl, item_drop_reason::deliberate, { *it }, fix.position() );
+            }
             fix.remove_item();
         }
 
@@ -3516,7 +3523,8 @@ int heal_actor::use( player &p, item &it, bool, const tripoint &pos ) const
     if( long_action && &patient == &p && !p.is_npc() ) {
         // Assign first aid long action.
         /** @EFFECT_FIRSTAID speeds up firstaid activity */
-        p.assign_activity( ACT_FIRSTAID, cost, 0, p.get_item_position( &it ), it.tname() );
+        p.assign_activity( ACT_FIRSTAID, cost, 0, 0, it.tname() );
+        p.activity.targets.push_back( item_location( p, &it ) );
         p.activity.values.push_back( hpp );
         p.moves = 0;
         return 0;
@@ -4082,9 +4090,9 @@ int saw_barrel_actor::use( player &p, item &it, bool t, const tripoint & ) const
         return 0;
     }
 
-    item &obj = p.i_at( loc.obtain( p ) );
+    item &obj = *loc.obtain( p );
     p.add_msg_if_player( _( "You saw down the barrel of your %s." ), obj.tname() );
-    obj.contents.emplace_back( "barrel_small", calendar::turn );
+    obj.put_in( item( "barrel_small", calendar::turn ) );
 
     return 0;
 }

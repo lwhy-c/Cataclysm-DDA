@@ -5,6 +5,8 @@
 #include "type_id.h"
 #include "player_activity.h"
 
+using itype_id = std::string;
+
 static const activity_id ACT_ADV_INVENTORY( "ACT_ADV_INVENTORY" );
 static const activity_id ACT_AIM( "ACT_AIM" );
 static const activity_id ACT_ARMOR_LAYERS( "ACT_ARMOR_LAYERS" );

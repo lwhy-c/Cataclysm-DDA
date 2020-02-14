@@ -1538,12 +1538,13 @@ int iuse::remove_all_mods( player *p, item *, bool, const tripoint & )
     }
 
     if( !loc->ammo_remaining() || g->unload( *loc ) ) {
-        auto mod = std::find_if( loc->contents.begin(), loc->contents.end(), []( const item & e ) {
+        item *mod = loc->contents.get_item_with(
+        []( const item & e ) {
             return e.is_toolmod() && !e.is_irremovable();
         } );
         add_msg( m_info, _( "You remove the %s from the tool." ), mod->tname() );
         p->i_add_or_drop( *mod );
-        loc->contents.erase( mod );
+        loc->remove_item( *mod );
 
         remove_radio_mod( *loc, *p );
     }
@@ -1587,8 +1588,8 @@ int iuse::fishing_rod( player *p, item *it, bool, const tripoint & )
         return 0;
     }
     p->add_msg_if_player( _( "You cast your line and wait to hook something…" ) );
-    p->assign_activity( ACT_FISH, to_moves<int>( 5_hours ), 0,
-                        p->get_item_position( it ), it->tname() );
+    p->assign_activity( ACT_FISH, to_moves<int>( 5_hours ), 0, 0, it->tname() );
+    p->activity.targets.push_back( item_location( *p, it ) );
     p->activity.coord_set = g->get_fishable_locations( 60, *found );
     return 0;
 }
@@ -3138,7 +3139,8 @@ int iuse::pickaxe( player *p, item *it, bool, const tripoint &pos )
         break;
     }
 
-    p->assign_activity( ACT_PICKAXE, moves, -1, p->get_item_position( it ) );
+    p->assign_activity( ACT_PICKAXE, moves, -1 );
+    p->activity.targets.push_back( item_location( *p, it ) );
     p->activity.placement = pnt;
     p->add_msg_if_player( _( "You strike the %1$s with your %2$s." ),
                           g->m.tername( pnt ), it->tname() );
@@ -4245,7 +4247,8 @@ int iuse::portable_game( player *p, item *it, bool, const tripoint & )
                                 p->get_item_position( it ), "gaming" );
             return it->type->charges_to_use();
         }
-        p->assign_activity( ACT_GAME, moves, -1, p->get_item_position( it ), "gaming" );
+        p->assign_activity( ACT_GAME, moves, -1, 0, "gaming" );
+        p->activity.targets.push_back( item_location( *p, it ) );
         std::map<std::string, std::string> game_data;
         game_data.clear();
         int game_score = 0;
@@ -4293,8 +4296,8 @@ int iuse::hand_crank( player *p, item *it, bool, const tripoint & )
         if( it->ammo_capacity() > it->ammo_remaining() ) {
             p->add_msg_if_player( _( "You start cranking the %s to charge its %s." ), it->tname(),
                                   it->magazine_current()->tname() );
-            p->assign_activity( ACT_HAND_CRANK, moves, -1, p->get_item_position( it ),
-                                "hand-cranking" );
+            p->assign_activity( ACT_HAND_CRANK, moves, -1, 0, "hand-cranking" );
+            p->activity.targets.push_back( item_location( *p, it ) );
         } else {
             p->add_msg_if_player( _( "You could use the %s to charge its %s, but it's already charged." ),
                                   it->tname(), magazine->tname() );
@@ -4338,8 +4341,8 @@ int iuse::vibe( player *p, item *it, bool, const tripoint & )
             p->add_msg_if_player( _( "You whip out your %s and start getting the tension out." ),
                                   it->tname() );
         }
-        p->assign_activity( ACT_VIBE, moves, -1, p->get_item_position( it ),
-                            "de-stressing" );
+        p->assign_activity( ACT_VIBE, moves, -1, 0, "de-stressing" );
+        p->activity.targets.push_back( item_location( *p, it ) );
     }
     return it->type->charges_to_use();
 }
@@ -4756,8 +4759,8 @@ int iuse::oxytorch( player *p, item *it, bool, const tripoint & )
     }
 
     // placing ter here makes resuming tasks work better
-    p->assign_activity( ACT_OXYTORCH, moves, static_cast<int>( ter ),
-                        p->get_item_position( it ) );
+    p->assign_activity( ACT_OXYTORCH, moves, static_cast<int>( ter ) );
+    p->activity.targets.push_back( item_location( *p, it ) );
     p->activity.placement = pnt;
     p->activity.values.push_back( charges );
 
@@ -7783,10 +7786,10 @@ int iuse::foodperson( player *p, item *it, bool t, const tripoint &pos )
 int iuse::radiocar( player *p, item *it, bool, const tripoint & )
 {
     int choice = -1;
-    auto bomb_it = std::find_if( it->contents.begin(), it->contents.end(), []( const item & c ) {
+    item *bomb_it = it->contents.get_item_with( []( const item & c ) {
         return c.has_flag( "RADIOCARITEM" );
     } );
-    if( bomb_it == it->contents.end() ) {
+    if( bomb_it == nullptr ) {
         choice = uilist( _( "Using RC car:" ), {
             _( "Turn on" ), _( "Put a bomb to car" )
         } );
@@ -7815,7 +7818,7 @@ int iuse::radiocar( player *p, item *it, bool, const tripoint & )
 
     if( choice == 1 ) {
 
-        if( bomb_it == it->contents.end() ) { //arming car with bomb
+        if( bomb_it == nullptr ) { //arming car with bomb
 
             avatar *you = p->as_avatar();
             item_location loc;
@@ -7848,7 +7851,7 @@ int iuse::radiocar( player *p, item *it, bool, const tripoint & )
 
             p->inv.assign_empty_invlet( *bomb_it, *p, true ); // force getting an invlet.
             p->i_add( *bomb_it );
-            it->contents.erase( bomb_it );
+            it->remove_item( *bomb_it );
 
             p->add_msg_if_player( _( "You disarmed your RC car." ) );
         }
@@ -7900,12 +7903,11 @@ static void sendRadioSignal( player &p, const std::string &signal )
                     it.ammo_unset();
                 }
             } else if( it.has_flag( "RADIO_CONTAINER" ) && !it.contents.empty() ) {
-                auto itm = std::find_if( it.contents.begin(),
-                it.contents.end(), [&signal]( const item & c ) {
+                item *itm = it.contents.get_item_with( [&signal]( const item & c ) {
                     return c.has_flag( signal );
                 } );
 
-                if( itm != it.contents.end() ) {
+                if( itm != nullptr ) {
                     sounds::sound( p.pos(), 6, sounds::sound_t::alarm, _( "beep" ), true, "misc", "beep" );
                     // Invoke twice: first to transform, then later to proc
                     if( itm->has_flag( "RADIO_INVOKE_PROC" ) ) {
@@ -7915,7 +7917,7 @@ static void sendRadioSignal( player &p, const std::string &signal )
                     }
                     if( itm->has_flag( "BOMB" ) ) {
                         itm->type->invoke( p, *itm, loc );
-                        it.contents.clear();
+                        it.contents.clear_items();
                     }
                 }
             }
@@ -7998,12 +8000,11 @@ int iuse::radiocontrol( player *p, item *it, bool t, const tripoint & )
 
         if( !radio_containers.empty() ) {
             for( auto items : radio_containers ) {
-                auto itm = std::find_if( items->contents.begin(),
-                items->contents.end(), [&]( const item & c ) {
+                item *itm = items->contents.get_item_with( [&]( const item & c ) {
                     return c.has_flag( "BOMB" ) && c.has_flag( signal );
                 } );
 
-                if( itm != items->contents.end() ) {
+                if( itm != nullptr ) {
                     p->add_msg_if_player( m_warning,
                                           _( "The %1$s in your %2$s would explode on this signal.  Place it down before sending the signal." ),
                                           itm->display_name(), items->display_name() );
@@ -8263,11 +8264,12 @@ int iuse::autoclave( player *p, item *it, bool t, const tripoint &pos )
         if( Cycle_time <= 0 ) {
             it->active = false;
             it->erase_var( "CYCLETIME" );
-            for( item &bio : it->contents ) {
-                if( bio.is_bionic() && !bio.has_flag( "NO_PACKED" ) ) {
-                    bio.unset_flag( "NO_STERILE" );
+            it->visit_items( []( item * bio ) {
+                if( bio->is_bionic() && !bio->has_flag( "NO_PACKED" ) ) {
+                    bio->unset_flag( "NO_STERILE" );
                 }
-            }
+                return VisitResponse::NEXT;
+            } );
         } else {
             it->set_var( "CYCLETIME", Cycle_time );
         }
@@ -8278,12 +8280,11 @@ int iuse::autoclave( player *p, item *it, bool t, const tripoint &pos )
         }
 
         bool empty = true;
-        item *clean_cbm = nullptr;
-        for( item &bio : it->contents ) {
-            if( bio.is_bionic() ) {
-                clean_cbm = &bio;
-            }
-        }
+        item *clean_cbm = it->contents.get_item_with(
+        []( const item & it ) {
+            return it.is_bionic();
+        } );
+
         if( clean_cbm ) {
             empty = false;
             if( query_yn( _( "Autoclave already contains a CBM.  Do you want to remove it?" ) ) ) {
@@ -8366,7 +8367,7 @@ int iuse::multicooker( player *p, item *it, bool t, const tripoint &pos )
         }
 
         if( cooktime <= 0 ) {
-            item &meal = it->emplace_back( it->get_var( "DISH" ) );
+            item meal( it->get_var( "DISH" ) );
             if( ( *recipe_id( it->get_var( "RECIPE" ) ) ).hot_result() ) {
                 meal.heat_up();
             } else {
@@ -8378,6 +8379,7 @@ int iuse::multicooker( player *p, item *it, bool t, const tripoint &pos )
             it->active = false;
             it->erase_var( "DISH" );
             it->erase_var( "COOKTIME" );
+            it->put_in( meal );
 
             //~ sound of a multi-cooker finishing its cycle!
             sounds::sound( pos, 8, sounds::sound_t::alarm, _( "ding!" ), true, "misc", "ding" );
@@ -8420,15 +8422,15 @@ int iuse::multicooker( player *p, item *it, bool t, const tripoint &pos )
         uilist menu;
         menu.text = _( "Welcome to the RobotChef3000.  Choose option:" );
 
-        // Find actual contents rather than attached mod or battery.
-        auto dish_it = std::find_if_not( it->contents.begin(), it->contents.end(), []( const item & c ) {
-            return c.is_toolmod() || c.is_magazine();
+        item *dish_it = it->contents.get_item_with(
+        []( const item & it ) {
+            return !( it.is_toolmod() || it.is_magazine() );
         } );
 
         if( it->active ) {
             menu.addentry( mc_stop, true, 's', _( "Stop cooking" ) );
         } else {
-            if( dish_it == it->contents.end() ) {
+            if( dish_it == nullptr ) {
                 if( it->ammo_remaining() < charges_to_start ) {
                     p->add_msg_if_player( _( "Batteries are low." ) );
                     return 0;
@@ -8491,7 +8493,7 @@ int iuse::multicooker( player *p, item *it, bool t, const tripoint &pos )
                 p->i_add( dish );
             }
 
-            it->contents.erase( dish_it );
+            it->remove_item( *dish_it );
             it->erase_var( "RECIPE" );
             it->convert( "multi_cooker" );
             if( is_delicious ) {
