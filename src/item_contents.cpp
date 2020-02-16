@@ -180,6 +180,19 @@ units::mass item_contents::item_weight_modifier() const
     return ret;
 }
 
+cata::optional<int> item_contents::obtain_cost( const Character &, const item &it ) const
+{
+    auto iter = std::find_if( items.begin(), items.end(), [&it]( const item & find ) {
+        return &it == &find;
+    } );
+    if( iter != items.end() ) {
+        // this is where we put the calculations for draw cost
+        return INVENTORY_HANDLING_PENALTY;
+    } else {
+        return cata::nullopt;
+    }
+}
+
 int item_contents::best_quality( const quality_id &id ) const
 {
     int ret = 0;

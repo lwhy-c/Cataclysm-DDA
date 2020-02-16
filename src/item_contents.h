@@ -48,6 +48,8 @@ class item_contents
         units::volume item_size_modifier() const;
         units::mass item_weight_modifier() const;
 
+        cata::optional<int> obtain_cost( const Character &guy, const item &it ) const;
+
         int best_quality( const quality_id &id ) const;
 
         ret_val<bool> insert_item( const item &it );

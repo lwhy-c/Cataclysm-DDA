@@ -2,6 +2,7 @@
 #include <memory>
 #include <string>
 
+#include "avatar.h"
 #include "catch/catch.hpp"
 #include "game.h"
 #include "item.h"
@@ -49,6 +50,14 @@ TEST_CASE( "item_location_can_maintain_reference_despite_item_removal", "[item][
     CAPTURE( m.i_at( pos ) );
     REQUIRE( item_loc );
     CHECK( item_loc->typeId() == "tshirt" );
+}
+
+TEST_CASE( "item_location_returns_parent", "[item][item_location]" )
+{
+    avatar &dummy = g->u;
+    item_location backpack( dummy, &dummy.i_add( item( "backpack" ) ) );
+    REQUIRE( backpack == backpack.parent_item() );
+    printf( "obtain cost %d", backpack.obtain_cost( dummy ) );
 }
 
 TEST_CASE( "item_location_doesnt_return_stale_map_item", "[item][item_location]" )
