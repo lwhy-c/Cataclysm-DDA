@@ -73,7 +73,7 @@ class item_contents
 
         bool has_any_with( const std::function<bool( const item & )> &filter ) const;
 
-        void migrate_item( item &it, const std::set<itype_id> &migrations );
+        void migrate_item( item &obj, const std::set<itype_id> &migrations );
         bool item_has_uses_recursive() const;
         bool stacks_with( const item_contents &rhs ) const;
         /**
