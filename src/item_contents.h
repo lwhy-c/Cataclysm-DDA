@@ -19,29 +19,33 @@ class item_contents
 {
     public:
         item_contents() = default;
-        // used to aid migration
+        /** used to aid migration */
         item_contents( const std::list<item> &items ) : items( items ) {}
 
         bool empty() const;
 
-        // returns a list of pointers to all top-level items
+        /** returns a list of pointers to all top-level items */
         std::list<item *> all_items_top();
-        // returns a list of pointers to all top-level items
+        /** returns a list of pointers to all top-level items */
         std::list<const item *> all_items_top() const;
 
-        // gets all gunmods in the item
+        /** gets all gunmods in the item */
         std::vector<item *> gunmods();
-        // gets all gunmods in the item
+        /** gets all gunmods in the item */
         std::vector<const item *> gunmods() const;
 
-        // this is an artifact of the previous code using
-        // front() everywhere for contents. this is to aid
-        // migration to pockets. please do not use for new functions
+        /**
+         * this is an artifact of the previous code using
+         * front() everywhere for contents. this is to aid
+         * migration to pockets. please do not use for new functions
+         */
         item &front();
         const item &front() const;
-        // this is an artifact of the previous code using
-        // back() everywhere for contents. this is to aid
-        // migration to pockets. please do not use for new functions
+        /**
+         * this is an artifact of the previous code using
+         * back() everywhere for contents. this is to aid
+         * migration to pockets. please do not use for new functions
+         */
         item &back();
         const item &back() const;
 
@@ -52,9 +56,11 @@ class item_contents
 
         ret_val<bool> insert_item( const item &it );
 
-        // returns the number of items stacks in contents
-        // each item that is not count_by_charges,
-        // plus whole stacks of items that are
+        /**
+         * returns the number of items stacks in contents
+         * each item that is not count_by_charges,
+         * plus whole stacks of items that are
+         */
         size_t num_item_stacks() const;
 
         bool spill_contents( const tripoint &pos );
@@ -70,9 +76,10 @@ class item_contents
         void migrate_item( item &it, const std::set<itype_id> &migrations );
         bool item_has_uses_recursive() const;
         bool stacks_with( const item_contents &rhs ) const;
-
-        // @relates visitable
-        // NOTE: upon expansion, this may need to be filtered by type enum depending on accessibility
+        /**
+         * @relates visitable
+         * NOTE: upon expansion, this may need to be filtered by type enum depending on accessibility
+         */
         VisitResponse visit_contents( const std::function<VisitResponse( item *, item * )> &func,
                                       item *parent = nullptr );
         bool remove_internal( const std::function<bool( item & )> &filter,
