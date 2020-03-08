@@ -73,19 +73,20 @@ TEST_CASE( "item_in_container", "[item][item_location]" )
     item jeans( "jeans" );
 
     backpack.put_in( jeans );
-    
+
     dummy.wear( backpack );
-    
+
     item_location backpack_loc( dummy, &backpack );
 
     REQUIRE( dummy.has_item( *backpack_loc ) );
 
     item_location jeans_loc( backpack_loc, &jeans );
-    
+
     REQUIRE( backpack_loc.where() == item_location::type::character );
     REQUIRE( jeans_loc.where() == item_location::type::container );
 
-    CHECK( backpack_loc.obtain_cost( dummy ) + INVENTORY_HANDLING_PENALTY == jeans_loc.obtain_cost( dummy ) );
-    
+    CHECK( backpack_loc.obtain_cost( dummy ) + INVENTORY_HANDLING_PENALTY == jeans_loc.obtain_cost(
+               dummy ) );
+
     CHECK( jeans_loc.parent_item() == backpack_loc );
 }
