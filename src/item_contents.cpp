@@ -1,5 +1,6 @@
 #include "item_contents.h"
 
+#incldue "character.h"
 #include "game.h"
 #include "handle_liquid.h"
 #include "item.h"
