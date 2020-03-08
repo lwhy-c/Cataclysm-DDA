@@ -1,5 +1,6 @@
 #include "item_contents.h"
 
+#include "character.h"
 #include "game.h"
 #include "handle_liquid.h"
 #include "item.h"
@@ -116,6 +117,28 @@ std::list<const item *> item_contents::all_items_top() const
     std::list<const item *> ret;
     for( const item &it : items ) {
         ret.push_back( &it );
+    }
+    return ret;
+}
+
+std::list<item *> item_contents::all_items_ptr()
+{
+    std::list<item *> ret;
+    for( item &it : items ) {
+        ret.push_back( &it );
+        std::list<item *> inside = it.contents.all_items_ptr();
+        ret.insert( ret.end(), inside.begin(), inside.end() );
+    }
+    return ret;
+}
+
+std::list<const item *> item_contents::all_items_ptr() const
+{
+    std::list<const item *> ret;
+    for( const item &it : items ) {
+        ret.push_back( &it );
+        std::list<const item *> inside = it.contents.all_items_ptr();
+        ret.insert( ret.end(), inside.begin(), inside.end() );
     }
     return ret;
 }
