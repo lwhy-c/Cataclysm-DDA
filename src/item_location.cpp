@@ -533,7 +533,7 @@ class item_location::impl::item_in_container : public item_location::impl
             if( !target() ) {
                 return std::string();
             }
-            return _( string_format( "inside %s", container->tname() ) );
+            return string_format( _( "inside %s" ), container->tname() );
         }
 
         type where() const override {
