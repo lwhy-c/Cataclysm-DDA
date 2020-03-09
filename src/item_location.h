@@ -28,7 +28,7 @@ class item_location
             character = 1,
             map = 2,
             vehicle = 3,
-            container
+            container = 4
         };
 
         item_location();
