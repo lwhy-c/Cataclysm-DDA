@@ -519,6 +519,9 @@ class item_location::impl::item_in_container : public item_location::impl
         }
 
         item *unpack( int idx ) const override {
+            if( idx < 0 || static_cast<size_t>( idx ) >= target()->contents.num_item_stacks() ) {
+                return nullptr;
+            }
             std::list<const item *> all_items = container->contents.all_items_ptr();
             auto iter = all_items.begin();
             std::advance( iter, idx );
