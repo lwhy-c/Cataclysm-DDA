@@ -491,13 +491,13 @@ class item_location::impl::item_in_container : public item_location::impl
         // note: could be a better way of handling this?
         int calc_index() const {
             int idx = 0;
-            for( const item *it : container->contents.all_items_ptr() ) {
+            for( const item *it : container->contents.all_items_top() ) {
                 if( target() == it ) {
                     return idx;
                 }
                 idx++;
             }
-            if( idx == 0 ) {
+            if( container->contents.empty() ) {
                 return -1;
             }
             return idx;
@@ -661,6 +661,13 @@ void item_location::deserialize( JsonIn &js )
         if( veh && part >= 0 && part < static_cast<int>( veh->parts.size() ) ) {
             ptr.reset( new impl::item_on_vehicle( vehicle_cursor( *veh, part ), idx ) );
         }
+    } else if( type == "in_container" ) {
+        item_location parent;
+        obj.read( "parent", parent );
+        const std::list<item *> parent_contents = parent->contents.all_items_top();
+        auto iter = parent_contents.begin();
+        std::advance( iter, idx );
+        ptr.reset( new impl::item_in_container( parent, *iter ) );
     }
 }
 
