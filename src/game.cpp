@@ -8505,7 +8505,8 @@ void game::wield( item_location &loc )
         switch( location_type ) {
             case item_location::type::container:
                 // this will not cause things to spill, as it is inside another item
-                wield( loc.obtain( g->u ) );
+                loc = loc.obtain( g->u );
+                wield( loc );
             case item_location::type::character:
                 if( worn_index != INT_MIN ) {
                     auto it = u.worn.begin();
