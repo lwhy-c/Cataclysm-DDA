@@ -72,11 +72,11 @@ TEST_CASE( "item_in_container", "[item][item_location]" )
     item &backpack = dummy.i_add( item( "backpack" ) );
     item jeans( "jeans" );
 
+    REQUIRE( dummy.has_item( backpack ) );
+
     backpack.put_in( jeans );
 
-    dummy.wear( backpack );
-
-    item_location backpack_loc( dummy, &backpack );
+    item_location backpack_loc( dummy, & **dummy.wear( backpack ) );
 
     REQUIRE( dummy.has_item( *backpack_loc ) );
 
