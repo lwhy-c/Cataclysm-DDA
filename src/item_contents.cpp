@@ -165,26 +165,6 @@ std::vector<const item *> item_contents::gunmods() const
     return res;
 }
 
-item &item_contents::front()
-{
-    return items.front();
-}
-
-const item &item_contents::front() const
-{
-    return items.front();
-}
-
-item &item_contents::back()
-{
-    return items.back();
-}
-
-const item &item_contents::back() const
-{
-    return items.back();
-}
-
 units::volume item_contents::item_size_modifier() const
 {
     units::volume ret = 0_ml;

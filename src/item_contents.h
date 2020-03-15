@@ -39,21 +39,6 @@ class item_contents
         /** gets all gunmods in the item */
         std::vector<const item *> gunmods() const;
 
-        /**
-         * this is an artifact of the previous code using
-         * front() everywhere for contents. this is to aid
-         * migration to pockets. please do not use for new functions
-         */
-        item &front();
-        const item &front() const;
-        /**
-         * this is an artifact of the previous code using
-         * back() everywhere for contents. this is to aid
-         * migration to pockets. please do not use for new functions
-         */
-        item &back();
-        const item &back() const;
-
         units::volume item_size_modifier() const;
         units::mass item_weight_modifier() const;
 
