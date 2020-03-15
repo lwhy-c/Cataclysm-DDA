@@ -666,7 +666,8 @@ std::vector<item> json_item_substitution::get_substitution( const item &it,
             while( result.charges > 0 ) {
                 const item pushed = result.in_its_container();
                 ret.push_back( pushed );
-                result.mod_charges( pushed.contents.empty() ? -pushed.charges : -pushed.contents.back().charges );
+                result.mod_charges( pushed.contents.empty() ? -pushed.charges :
+                                    -pushed.contents.legacy_back().charges );
             }
         }
     }

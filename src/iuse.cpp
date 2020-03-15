@@ -1923,7 +1923,7 @@ int iuse::water_purifier( player *p, item *it, bool, const tripoint & )
         return 0;
     }
     auto obj = g->inv_map_splice( []( const item & e ) {
-        return !e.contents.empty() && e.contents.front().typeId() == "water";
+        return !e.contents.empty() && e.contents.legacy_front().typeId() == "water";
     }, _( "Purify what?" ), 1, _( "You don't have water to purify." ) );
 
     if( !obj ) {
@@ -1931,7 +1931,7 @@ int iuse::water_purifier( player *p, item *it, bool, const tripoint & )
         return 0;
     }
 
-    item &liquid = obj->contents.front();
+    item &liquid = obj->contents.legacy_front();
     if( !it->units_sufficient( *p, liquid.charges ) ) {
         p->add_msg_if_player( m_info, _( "That volume of water is too large to purify." ) );
         return 0;
@@ -7795,7 +7795,7 @@ int iuse::radiocar( player *p, item *it, bool, const tripoint & )
         } );
     } else {
         choice = uilist( _( "Using RC car:" ), {
-            _( "Turn on" ), bomb_it->tname()
+            _( "Turn on" ), ( *bomb_it )->tname()
         } );
     }
     if( choice < 0 ) {

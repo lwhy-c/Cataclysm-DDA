@@ -3389,8 +3389,8 @@ float vehicle::fuel_specific_energy( const itype_id &ftype ) const
     for( auto vehicle_part : parts ) {
         if( vehicle_part.is_tank() && vehicle_part.ammo_current() == ftype  &&
             vehicle_part.base.contents_made_of( LIQUID ) ) {
-            float energy = vehicle_part.base.contents.front().specific_energy;
-            float mass = to_gram( vehicle_part.base.contents.front().weight() );
+            float energy = vehicle_part.base.contents.legacy_front().specific_energy;
+            float mass = to_gram( vehicle_part.base.contents.legacy_front().weight() );
             total_energy += energy * mass;
             total_mass += mass;
         }

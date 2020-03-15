@@ -72,8 +72,6 @@
 
 class basecamp;
 
-void drop_or_handle( const item &newit, player &p );
-
 static bool crafting_allowed( const player &p, const recipe &rec )
 {
     if( p.morale_crafting_speed_multiplier( rec ) <= 0.0f ) {
@@ -378,8 +376,8 @@ bool player::check_eligible_containers_for_crafting( const recipe &rec, int batc
             }
 
             if( !cont->is_container_empty() ) {
-                if( cont->contents.front().typeId() == prod.typeId() ) {
-                    charges_to_store -= cont->get_remaining_capacity_for_liquid( cont->contents.front(), true );
+                if( cont->contents.legacy_front().typeId() == prod.typeId() ) {
+                    charges_to_store -= cont->get_remaining_capacity_for_liquid( cont->contents.legacy_front(), true );
                 }
             } else {
                 charges_to_store -= cont->get_remaining_capacity_for_liquid( prod, true );
@@ -1066,7 +1064,7 @@ void player::complete_craft( item &craft, const tripoint &loc )
         // Points to newit unless newit is a non-empty container, then it points to newit's contents.
         // Necessary for things like canning soup; sometimes we want to operate on the soup, not the can.
         item &food_contained = ( newit.is_container() && !newit.contents.empty() ) ?
-                               newit.contents.back() : newit;
+                               newit.contents.legacy_back() : newit;
 
         // messages, learning of recipe, food spoilage calculation only once
         if( first ) {
@@ -2292,7 +2290,7 @@ void remove_ammo( std::list<item> &dis_items, player &p )
     }
 }
 
-void drop_or_handle( const item &newit, player &p )
+void drop_or_handle( const item &newit, Character &p )
 {
     if( newit.made_of( LIQUID ) && p.is_player() ) { // TODO: what about NPCs?
         liquid_handler::handle_all_liquid( newit, PICKUP_RANGE );

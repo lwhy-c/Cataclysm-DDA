@@ -1488,14 +1488,14 @@ bool Character::can_consume( const item &it ) const
         return true;
     }
     // Checking NO_RELOAD to prevent consumption of `battery` when contained in `battery_car` (#20012)
-    return !it.is_container_empty() && !it.has_flag( flag_NO_RELOAD ) &&
-           can_consume_as_is( it.contents.front() );
+    return !it.contents.legacy_empty() && !it.has_flag( flag_NO_RELOAD ) &&
+           can_consume_as_is( it.contents.legacy_front() );
 }
 
 item &Character::get_consumable_from( item &it ) const
 {
-    if( !it.is_container_empty() && can_consume_as_is( it.contents.front() ) ) {
-        return it.contents.front();
+    if( !it.is_container_empty() && can_consume_as_is( it.contents.legacy_front() ) ) {
+        return it.contents.legacy_front();
     } else if( can_consume_as_is( it ) ) {
         return it;
     }

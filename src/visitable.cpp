@@ -380,8 +380,8 @@ static VisitResponse visit_internal( const std::function<VisitResponse( item *, 
 VisitResponse item_contents::visit_contents( const std::function<VisitResponse( item *, item * )>
         &func, item *parent )
 {
-    for( item &e : items ) {
-        switch( visit_internal( func, &e, parent ) ) {
+    for( item_pocket &pocket : contents ) {
+        switch( pocket.visit_contents( func, parent ) ) {
             case VisitResponse::ABORT:
                 return VisitResponse::ABORT;
             default:

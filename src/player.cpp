@@ -100,6 +100,7 @@
 #include "stomach.h"
 #include "teleport.h"
 #include "cata_string_consts.h"
+#include "item_contents.h"
 
 const double MAX_RECOIL = 3000;
 
@@ -2523,32 +2524,6 @@ item player::reduce_charges( item *it, int quantity )
     return result;
 }
 
-int player::invlet_to_position( const int linvlet ) const
-{
-    // Invlets may come from curses, which may also return any kind of key codes, those being
-    // of type int and they can become valid, but different characters when casted to char.
-    // Example: KEY_NPAGE (returned when the player presses the page-down key) is 0x152,
-    // casted to char would yield 0x52, which happens to be 'R', a valid invlet.
-    if( linvlet > std::numeric_limits<char>::max() || linvlet < std::numeric_limits<char>::min() ) {
-        return INT_MIN;
-    }
-    const char invlet = static_cast<char>( linvlet );
-    if( is_npc() ) {
-        DebugLog( D_WARNING,  D_GAME ) << "Why do you need to call player::invlet_to_position on npc " <<
-                                       name;
-    }
-    if( weapon.invlet == invlet ) {
-        return -1;
-    }
-    auto iter = worn.begin();
-    for( size_t i = 0; i < worn.size(); i++, iter++ ) {
-        if( iter->invlet == invlet ) {
-            return worn_position_to_index( i );
-        }
-    }
-    return inv.invlet_to_position( invlet );
-}
-
 bool player::can_interface_armor() const
 {
     bool okay = std::any_of( my_bionics->begin(), my_bionics->end(),
@@ -2710,7 +2685,7 @@ bool player::consume( item_location loc )
         const bool was_in_container = !can_consume_as_is( target );
 
         if( was_in_container ) {
-            i_rem( &target.contents.front() );
+            i_rem( &target.contents.legacy_front() );
         } else {
             i_rem( &target );
         }
@@ -2835,7 +2810,7 @@ item::reload_option player::select_ammo( const item &base,
         } else if( e.ammo->is_watertight_container() ||
                    ( e.ammo->is_ammo_container() && is_worn( *e.ammo ) ) ) {
             // worn ammo containers should be named by their contents with their location also updated below
-            return e.ammo->contents.front().display_name();
+            return e.ammo->contents.legacy_front().display_name();
 
         } else {
             return ( ammo_location && ammo_location == e.ammo ? "* " : "" ) + e.ammo->display_name();
@@ -2895,7 +2870,7 @@ item::reload_option player::select_ammo( const item &base,
         row += string_format( " %-7d ", sel.moves() );
 
         if( base.is_gun() || base.is_magazine() ) {
-            const itype *ammo = sel.ammo->is_ammo_container() ? sel.ammo->contents.front().ammo_data() :
+            const itype *ammo = sel.ammo->is_ammo_container() ? sel.ammo->contents.legacy_front().ammo_data() :
                                 sel.ammo->ammo_data();
             if( ammo ) {
                 if( ammo->ammo->prop_damage ) {
@@ -2928,7 +2903,7 @@ item::reload_option player::select_ammo( const item &base,
     }
 
     for( auto i = 0; i < static_cast<int>( opts.size() ); ++i ) {
-        const item &ammo = opts[ i ].ammo->is_ammo_container() ? opts[ i ].ammo->contents.front() :
+        const item &ammo = opts[ i ].ammo->is_ammo_container() ? opts[ i ].ammo->contents.legacy_front() :
                            *opts[ i ].ammo;
 
         char hotkey = -1;
@@ -3022,7 +2997,7 @@ item::reload_option player::select_ammo( const item &base,
 
     const item_location &sel = opts[ menu.ret ].ammo;
     uistate.lastreload[ ammotype( base.ammo_default() ) ] = sel->is_ammo_container() ?
-            sel->contents.front().typeId() :
+            sel->contents.legacy_front().typeId() :
             sel->typeId();
     return opts[ menu.ret ];
 }
@@ -3052,7 +3027,7 @@ bool player::list_ammo( const item &base, std::vector<item::reload_option> &ammo
                 continue;
             }
             auto id = ( ammo->is_ammo_container() || ammo->is_container() )
-                      ? ammo->contents.front().typeId()
+                      ? ammo->contents.legacy_front().typeId()
                       : ammo->typeId();
             if( e->can_reload_with( id ) ) {
                 // Speedloaders require an empty target.
@@ -3086,7 +3061,7 @@ item::reload_option player::select_ammo( const item &base, bool prompt, bool emp
                 if( base.ammo_data() ) {
                     name = base.ammo_data()->nname( 1 );
                 } else if( base.is_watertight_container() ) {
-                    name = base.is_container_empty() ? "liquid" : base.contents.front().tname();
+                    name = base.is_container_empty() ? "liquid" : base.contents.legacy_front().tname();
                 } else {
                     name = enumerate_as_string( base.ammo_types().begin(),
                     base.ammo_types().end(), []( const ammotype & at ) {
@@ -3526,8 +3501,7 @@ player::wear( item &to_wear, bool interactive )
         weapon = item();
         was_weapon = true;
     } else {
-        inv.remove_item( &to_wear );
-        inv.restack( *this );
+        remove_item( to_wear );
         was_weapon = false;
     }
 
@@ -3536,7 +3510,7 @@ player::wear( item &to_wear, bool interactive )
         if( was_weapon ) {
             weapon = to_wear_copy;
         } else {
-            inv.add_item( to_wear_copy, true );
+            i_add( to_wear_copy );
         }
         return cata::nullopt;
     }
@@ -3594,18 +3568,8 @@ bool player::takeoff( item &it, std::list<item> *res )
     } );
 
     if( res == nullptr ) {
-        if( volume_carried() + it.volume() > volume_capacity_reduced_by( it.get_storage() ) ) {
-            if( is_npc() || query_yn( _( "No room in inventory for your %s.  Drop it?" ),
-                                      colorize( it.tname(), it.color_in_inventory() ) ) ) {
-                item_location loc( *this, &it );
-                drop( loc, pos() );
-                return true; // the drop activity ends up taking off the item anyway so shouldn't try to do it again here
-            } else {
-                return false;
-            }
-        }
         iter->on_takeoff( *this );
-        inv.add_item_keep_invlet( it );
+        i_add( it );
     } else {
         iter->on_takeoff( *this );
         res->push_back( it );
@@ -3685,7 +3649,7 @@ bool player::unload( item &it )
     std::vector<std::string> msgs( 1, it.tname() );
     std::vector<item *> opts( 1, &it );
 
-    for( auto e : it.gunmods() ) {
+    for( item *e : it.gunmods() ) {
         if( e->is_gun() && !e->has_flag( "NO_UNLOAD" ) &&
             ( e->magazine_current() || e->ammo_remaining() > 0 || e->casings_count() > 0 ) ) {
             msgs.emplace_back( e->tname() );
@@ -3767,9 +3731,6 @@ bool player::unload( item &it )
         } );
 
     } else if( target->ammo_remaining() ) {
-        int qty = target->ammo_remaining();
-
-        if( target->ammo_current() == "plut_cell" ) {
             qty = target->ammo_remaining() / PLUTONIUM_CHARGES;
             if( qty > 0 ) {
                 add_msg( _( "You recover %i unused plutonium." ), qty );
@@ -3921,8 +3882,6 @@ hint_rating player::rate_action_use( const item &it ) const
         return HINT_IFFY; //the rating is subjective, could be argued as HINT_CANT or HINT_GOOD as well
     } else if( it.type->has_use() ) {
         return HINT_GOOD;
-    } else if( !it.is_container_empty() ) {
-        return rate_action_use( it.get_contained() );
     }
 
     return HINT_CANT;
@@ -3991,10 +3950,10 @@ void player::reassign_item( item &it, int invlet )
 {
     bool remove_old = true;
     if( invlet ) {
-        item &prev = i_at( invlet_to_position( invlet ) );
-        if( !prev.is_null() ) {
-            remove_old = it.typeId() != prev.typeId();
-            inv.reassign_item( prev, it.invlet, remove_old );
+        item *prev = invlet_to_item( invlet );
+        if( prev != nullptr ) {
+            remove_old = it.typeId() != prev->typeId();
+            inv.reassign_item( *prev, it.invlet, remove_old );
         }
     }
 
@@ -4803,7 +4762,7 @@ std::string player::weapname( unsigned int truncate ) const
 
     } else if( weapon.is_container() && weapon.contents.num_item_stacks() == 1 ) {
         return string_format( "%s (%d)", weapon.tname(),
-                              weapon.contents.front().charges );
+                              weapon.contents.legacy_front().charges );
 
     } else if( !is_armed() ) {
         return _( "fists" );
@@ -4817,6 +4776,7 @@ bool player::wield_contents( item &container, item *internal_item, bool penaltie
 {
     // if index not specified and container has multiple items then ask the player to choose one
     if( internal_item == nullptr ) {
+        std::list<item> all_items = container.contents.all_items();
         std::vector<std::string> opts;
         std::list<item *> container_contents = container.contents.all_items_top();
         std::transform( container_contents.begin(), container_contents.end(),
@@ -4829,7 +4789,7 @@ bool player::wield_contents( item &container, item *internal_item, bool penaltie
                 return false;
             }
         } else {
-            internal_item = &container.contents.front();
+            internal_item = &container.contents.legacy_front();
         }
     }
 
@@ -4881,10 +4841,11 @@ bool player::wield_contents( item &container, item *internal_item, bool penaltie
     return true;
 }
 
-void player::store( item &container, item &put, bool penalties, int base_cost )
+void player::store( item &container, item &put, bool penalties, int base_cost,
+                    item_pocket::pocket_type pk_type )
 {
     moves -= item_store_cost( put, container, penalties, base_cost );
-    container.put_in( i_rem( &put ) );
+    container.put_in( i_rem( &put ), pk_type );
     reset_encumbrance();
 }
 
