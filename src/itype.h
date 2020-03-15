@@ -197,30 +197,6 @@ struct islot_brewable {
     time_duration time = 0_turns;
 };
 
-struct islot_container {
-    /**
-     * Inner volume of the container.
-     */
-    units::volume contains = 0_ml;
-    /**
-     * Can be resealed.
-     */
-    bool seals = false;
-    /**
-     * Can hold liquids.
-     */
-    bool watertight = false;
-    /**
-     * Contents do not spoil.
-     */
-    bool preserves = false;
-    /**
-     * If this is set to anything but "null", changing this container's contents in any way
-     * will turn this item into that type.
-     */
-    itype_id unseals_into = "null";
-};
-
 struct islot_armor {
     /**
      * Bitfield of enum body_part
@@ -807,7 +783,6 @@ struct itype {
          * this before using it.
          */
         /*@{*/
-        cata::value_ptr<islot_container> container;
         cata::value_ptr<islot_tool> tool;
         cata::value_ptr<islot_comestible> comestible;
         cata::value_ptr<islot_brewable> brewable;
@@ -983,9 +958,6 @@ struct itype {
         /** Default magazine for each ammo type that can be used to reload this item */
         std::map< ammotype, itype_id > magazine_default;
 
-        /** Volume above which the magazine starts to protrude from the item and add extra volume */
-        units::volume magazine_well = 0_ml;
-
         layer_level layer = layer_level::MAX_CLOTHING_LAYER;
 
         /**
@@ -1000,8 +972,6 @@ struct itype {
                 return "TOOL";
             } else if( comestible ) {
                 return "FOOD";
-            } else if( container ) {
-                return "CONTAINER";
             } else if( armor ) {
                 return "ARMOR";
             } else if( book ) {

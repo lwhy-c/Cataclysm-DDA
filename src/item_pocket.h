@@ -29,17 +29,15 @@ class item_pocket
 {
     public:
         enum pocket_type {
-            // this is to aid the transition from the previous way item contents were handled.
-            // this will have the rules that previous contents would have
-            LEGACY_CONTAINER,
             CONTAINER,
             MAGAZINE,
+            MOD, // the gunmods or toolmods
             LAST
         };
         enum class contain_code {
             SUCCESS,
-            // legacy containers can't technically contain anything
-            ERR_LEGACY_CONTAINER,
+            // only mods can go into the pocket for mods
+            ERR_MOD,
             // trying to put a liquid into a non-watertight container
             ERR_LIQUID,
             // trying to put a gas in a non-gastight container
@@ -64,6 +62,8 @@ class item_pocket
         item_pocket( const pocket_data *data ) : data( data ) {}
 
         bool stacks_with( const item_pocket &rhs ) const;
+        bool is_funnel_container( units::volume &bigger_than ) const;
+        bool has_any_with( const std::function<bool( const item & )> &filter ) const;
 
         bool is_valid() const;
         bool is_type( pocket_type ptype ) const;
@@ -72,13 +72,10 @@ class item_pocket
         bool rigid() const;
         bool watertight() const;
 
-        std::list<item> all_items();
-        std::list<item> all_items() const;
-        std::list<item *> all_items_ptr( pocket_type pk_type );
-        std::list<const item *> all_items_ptr( pocket_type pk_type ) const;
-
         std::list<item *> all_items_top();
         std::list<const item *> all_items_top() const;
+        std::list<item *> all_items_ptr( pocket_type pk_type );
+        std::list<const item *> all_items_ptr( pocket_type pk_type ) const;
 
         item &back();
         const item &back() const;
@@ -88,6 +85,7 @@ class item_pocket
         void pop_back();
 
         ret_val<contain_code> can_contain( const item &it ) const;
+        bool can_contain_liquid( bool held_or_ground ) const;
 
         // combined volume of contained items
         units::volume contains_volume() const;
@@ -102,14 +100,22 @@ class item_pocket
 
         int moves() const;
 
+        int best_quality( const quality_id &id ) const;
+
+        // heats up contents
+        void heat_up();
+        // returns a list of pointers of all gunmods in the pocket
+        std::vector<item *> gunmods();
+        // returns a list of pointers of all gunmods in the pocket
+        std::vector<const item *> gunmods() const;
         item *magazine_current();
+        int ammo_consume( int qty );
         void casings_handle( const std::function<bool( item & )> &func );
         bool use_amount( const itype_id &it, int &quantity, std::list<item> &used );
         bool will_explode_in_a_fire() const;
         bool detonate( const tripoint &p, std::vector<item> &drops );
         bool process( const itype &type, player *carrier, const tripoint &pos, bool activate,
                       float insulation, temperature_flag flag );
-        bool legacy_unload( player &guy, bool &changed );
         void remove_all_ammo( Character &guy );
         void remove_all_mods( Character &guy );
 
@@ -119,6 +125,9 @@ class item_pocket
         // spills any contents that can't fit into the pocket, largest items first
         void overflow( const tripoint &pos );
         bool spill_contents( const tripoint &pos );
+        void on_pickup( Character &guy );
+        void on_contents_changed();
+        void handle_liquid_or_spill( Character &guy );
         void clear_items();
         bool has_item( const item &it ) const;
         item *get_item_with( const std::function<bool( const item & )> &filter );
@@ -130,10 +139,19 @@ class item_pocket
 
         // tries to put an item in the pocket. returns false if failure
         ret_val<contain_code> insert_item( const item &it );
+        /** 
+          * adds an item to the pocket with no checks
+          * may create a new pocket
+          */
         void add( const item &it );
+        /** fills the pocket to the brim with the item */
+        void fill_with( item contained );
+        bool can_unload_liquid() const;
 
         // only available to help with migration from previous usage of std::list<item>
         std::list<item> &edit_contents();
+
+        void migrate_item( item &obj, const std::set<itype_id> &migrations );
 
         // cost of getting an item from this pocket
         // @TODO: make move cost vary based on other contained items
@@ -153,6 +171,8 @@ class item_pocket
         void deserialize( JsonIn &jsin );
 
         bool same_contents( const item_pocket &rhs ) const;
+        /** stacks like items inside the pocket */
+        void restack();
         bool has_item_stacks_with( const item &it ) const;
 
         bool better_pocket( const item_pocket &rhs, const item &it ) const;
@@ -164,6 +184,7 @@ class item_pocket
         const pocket_data *data = nullptr;
         // the items inside the pocket
         std::list<item> contents;
+        bool _sealed = true;
 };
 
 // an object that has data on how many items can exist inside an item
@@ -187,7 +208,7 @@ class pocket_data
     public:
         bool was_loaded;
 
-        item_pocket::pocket_type type = item_pocket::pocket_type::LEGACY_CONTAINER;
+        item_pocket::pocket_type type = item_pocket::pocket_type::CONTAINER;
         // max volume of stuff the pocket can hold
         units::volume max_contains_volume = 0_ml;
         // min volume of item that can be contained, otherwise it spills
@@ -200,6 +221,8 @@ class pocket_data
         float spoil_multiplier = 1.0f;
         // items' weight in this pocket are modified by this number
         float weight_multiplier = 1.0f;
+        // the size that gets subtracted from the contents before it starts enlarging the item
+        units::volume magazine_well = 0_ml;
         // base time it takes to pull an item out of the pocket
         int moves = 100;
         // protects contents from exploding in a fire
@@ -210,6 +233,8 @@ class pocket_data
         bool gastight = false;
         // the pocket will spill its contents if placed in another container
         bool open_container = false;
+        // the pocket is not resealable. 
+        bool resealable = true;
         // allows only items with at least one of the following flags to be stored inside
         // empty means no restriction
         std::vector<std::string> flag_restriction;
