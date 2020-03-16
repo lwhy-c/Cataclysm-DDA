@@ -1527,7 +1527,7 @@ int Character::i_add_to_container( const item &it, const bool unloading )
 
     const itype_id item_type = it.typeId();
     auto add_to_container = [&it, &charges]( item & container ) {
-        item &contained_ammo = container.contents.legacy_front();
+        item &contained_ammo = container.contents.first_ammo();
         if( contained_ammo.charges < container.ammo_capacity() ) {
             const int diff = container.ammo_capacity() - contained_ammo.charges;
             //~ %1$s: item name, %2$s: container name
@@ -1579,7 +1579,7 @@ item &Character::i_add( item it, bool  /* should_stack */ )
     last_item = item_type_id;
 
     if( it.is_food() || it.is_ammo() || it.is_gun() || it.is_armor() ||
-        it.is_book() || it.is_tool() || it.is_melee() || it.is_food_container() ) {
+        it.is_book() || it.is_tool() || it.is_melee() ) {
         inv.unsort();
     }
 
