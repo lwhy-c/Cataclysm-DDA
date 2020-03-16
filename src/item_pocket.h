@@ -142,14 +142,14 @@ class item_pocket
          * NOTE: this destroys the items that get processed
          */
         void process( player *carrier, const tripoint &pos, bool activate, float insulation = 1,
-            temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
+                      temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
         pocket_type saved_type() const {
             return _saved_type;
         }
 
         // tries to put an item in the pocket. returns false if failure
         ret_val<contain_code> insert_item( const item &it );
-        /** 
+        /**
           * adds an item to the pocket with no checks
           * may create a new pocket
           */
@@ -243,7 +243,7 @@ class pocket_data
         bool gastight = false;
         // the pocket will spill its contents if placed in another container
         bool open_container = false;
-        // the pocket is not resealable. 
+        // the pocket is not resealable.
         bool resealable = true;
         // allows only items with at least one of the following flags to be stored inside
         // empty means no restriction

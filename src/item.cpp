@@ -209,7 +209,7 @@ item::item( const itype *type, time_point turn, int qty ) : type( type ), bday( 
     } else if( type->magazine ) {
         if( type->magazine->count > 0 ) {
             put_in( item( type->magazine->default_ammo, calendar::turn, type->magazine->count ),
-                item_pocket::pocket_type::MAGAZINE );
+                    item_pocket::pocket_type::MAGAZINE );
         }
 
     } else if( has_temperature() || goes_bad() ) {
@@ -5707,7 +5707,7 @@ void item::set_mtype( const mtype *const m )
 bool item::is_ammo_container() const
 {
     return contents.has_any_with(
-        []( const item &it ) {
+    []( const item & it ) {
         return it.is_ammo();
     }, item_pocket::pocket_type::CONTAINER );
 }
@@ -5988,7 +5988,7 @@ double item::calculate_by_enchantment_wield( double modify, enchantment::mod val
 
 bool item::can_contain( const item &it ) const
 {
-    if ( this == &it ) {
+    if( this == &it ) {
         // does the set of all sets contain itself?
         return false;
     }
@@ -6502,7 +6502,8 @@ const itype *item::ammo_data() const
     }
 
     if( is_magazine() ) {
-        return !contents.empty() ? contents.all_items_top( item_pocket::pocket_type::MAGAZINE ).front()->ammo_data() : nullptr;
+        return !contents.empty() ? contents.all_items_top(
+                   item_pocket::pocket_type::MAGAZINE ).front()->ammo_data() : nullptr;
     }
 
     auto mods = is_gun() ? gunmods() : toolmods();
@@ -7050,7 +7051,8 @@ bool item::reload( player &u, item_location ammo, int qty )
     if( ammo->is_ammo_container() ) {
         container = ammo;
         // i'm not sure what's going on here
-        ammo = item_location( ammo, ammo->contents.all_items_top( item_pocket::pocket_type::CONTAINER ).front() );
+        ammo = item_location( ammo, ammo->contents.all_items_top(
+                                  item_pocket::pocket_type::CONTAINER ).front() );
     }
 
     if( !is_reloadable_with( ammo->typeId() ) ) {
@@ -7352,7 +7354,8 @@ int item::get_remaining_capacity_for_liquid( const item &liquid, bool allow_buck
         remaining_capacity = ammo_capacity() - ammo_remaining();
     } else if( can_contain_partial( liquid ) ) {
         if( contents.can_contain_liquid( false ) ) {
-            return error( string_format( _( "That %s must be on the ground or held to hold contents!" ), tname() ) );
+            return error( string_format( _( "That %s must be on the ground or held to hold contents!" ),
+                                         tname() ) );
         }
         remaining_capacity = contents.remaining_capacity_for_liquid( liquid );
     } else {
@@ -9286,7 +9289,7 @@ item &item::get_consumable_from( const Character &eater )
     }
 
     item *edible = nullptr;
-    visit_items( [&edible, &eater]( item *potential ) {
+    visit_items( [&edible, &eater]( item * potential ) {
         if( eater.can_consume_as_is( *potential ) ) {
             edible = potential;
             return VisitResponse::ABORT;

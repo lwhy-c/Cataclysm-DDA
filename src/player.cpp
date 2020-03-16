@@ -2992,7 +2992,7 @@ item::reload_option player::select_ammo( const item &base,
 
     const item_location &sel = opts[ menu.ret ].ammo;
     uistate.lastreload[ ammotype( base.ammo_default() ) ] = sel->is_ammo_container() ?
-        // get first item in all magazine pockets
+            // get first item in all magazine pockets
             sel->contents.first_ammo().typeId() :
             sel->typeId();
     return opts[ menu.ret ];
@@ -3019,12 +3019,12 @@ bool player::list_ammo( const item &base, std::vector<item::reload_option> &ammo
     for( const item *e : opts ) {
         for( item_location &ammo : find_ammo( *e, empty, ammo_search_range ) ) {
             // don't try to unload frozen liquids
-            if( ammo->is_watertight_container() && ammo->contents_made_of( SOLID ) ) {
+            if( ammo->is_frozen_liquid() ) {
                 continue;
             }
             itype_id id = ( ammo->is_ammo_container() || ammo->is_container() )
-                      ? ammo->contents.legacy_front().typeId()
-                      : ammo->typeId();
+                          ? ammo->contents.legacy_front().typeId()
+                          : ammo->typeId();
             if( e->can_reload_with( id ) ) {
                 // Speedloaders require an empty target.
                 if( !ammo->has_flag( "SPEEDLOADER" ) || e->ammo_remaining() < 1 ) {
@@ -3420,7 +3420,7 @@ int player::item_reload_cost( const item &it, const item &ammo, int qty ) const
     } else if( ammo.is_ammo_container() ) {
         int min_clamp = 0;
         // find the first ammo in the container to get its charges
-        ammo.visit_items( [&min_clamp]( const item *it ) {
+        ammo.visit_items( [&min_clamp]( const item * it ) {
             if( it->is_ammo() ) {
                 min_clamp = it->charges;
                 return VisitResponse::ABORT;
@@ -3736,13 +3736,11 @@ bool player::unload( item &it )
             return target->magazine_current() == &e;
         } );
 
-    }
-    else if( target->ammo_remaining() ) {
+    } else if( target->ammo_remaining() ) {
         int qty = target->ammo_remaining() / PLUTONIUM_CHARGES;
         if( qty > 0 ) {
             add_msg( _( "You recover %i unused plutonium." ), qty );
-        }
-        else {
+        } else {
             add_msg( m_info, _( "You can't remove partially depleted plutonium!" ) );
             return false;
         }
@@ -3761,8 +3759,7 @@ bool player::unload( item &it )
                 return false; // no liquid was moved
             }
 
-        }
-        else if( !this->add_or_drop_with_msg( ammo, qty > 1 ) ) {
+        } else if( !this->add_or_drop_with_msg( ammo, qty > 1 ) ) {
             return false;
         }
 

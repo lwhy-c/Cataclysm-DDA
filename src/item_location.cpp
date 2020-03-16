@@ -684,14 +684,6 @@ item_location item_location::parent_item() const
     return *this;
 }
 
-item_location item_location::parent_item() const
-{
-    if( where() == type::container ) {
-        return ptr->parent_item();
-    }
-    return *this;
-}
-
 item_location::type item_location::where() const
 {
     return ptr->where();

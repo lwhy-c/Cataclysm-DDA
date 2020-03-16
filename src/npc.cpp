@@ -542,7 +542,7 @@ void starting_inv( npc &who, const npc_class_id &type )
         ammo = ammo.in_its_container();
         if( ammo.made_of( LIQUID ) ) {
             item container( "bottle_plastic" );
-            container.put_in( ammo );
+            container.put_in( ammo, item_pocket::pocket_type::CONTAINER );
             ammo = container;
         }
 
@@ -2858,8 +2858,7 @@ bool npc::will_accept_from_player( const item &it ) const
         return false;
     }
 
-    const auto &comest = it.is_container() ? it.get_contained() : it;
-    if( comest.is_comestible() ) {
+    if( it.is_comestible() ) {
         if( it.get_comestible_fun() < 0 || it.poison > 0 ) {
             return false;
         }

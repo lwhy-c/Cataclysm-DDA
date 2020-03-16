@@ -633,9 +633,9 @@ class item : public visitable<item>
          * - suitable for liquids (@ref is_watertight_container),
          * - and the remaining one (they are for currently only for flavor).
          */
-         /*@{*/
-         /** Whether this is container. Note that container does not necessarily means it's
-          * suitable for liquids. */
+        /*@{*/
+        /** Whether this is container. Note that container does not necessarily means it's
+         * suitable for liquids. */
         bool is_container() const;
         /** Whether this is a container which can be used to store liquids. */
         bool is_watertight_container() const;
@@ -1174,7 +1174,7 @@ class item : public visitable<item>
         bool can_reload_with( const itype_id &ammo ) const;
         /** Returns true if this item can be reloaded with specified ammo type at this moment. */
         bool is_reloadable_with( const itype_id &ammo ) const;
-        /** 
+        /**
           * Returns true if any of the contents are not frozen or not empty if it's liquid
           */
         bool can_unload_liquid() const;

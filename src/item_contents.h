@@ -31,15 +31,14 @@ class item_contents
         // used for migration only
         item_contents( const std::list<item> &loaded );
         // used for loading itype
-        item_contents( const std::vector<pocket_data> &pockets )
-        {
+        item_contents( const std::vector<pocket_data> &pockets ) {
             for( const pocket_data &data : pockets ) {
                 contents.push_back( item_pocket( &data ) );
             }
         }
 
         /**
-          * returns a pointer to the best pocket that can contain the item @it 
+          * returns a pointer to the best pocket that can contain the item @it
           * only checks CONTAINER pocket type
           */
         item_pocket *best_pocket( const item &it, bool nested );
@@ -72,7 +71,7 @@ class item_contents
 
         units::volume item_size_modifier() const;
         units::mass item_weight_modifier() const;
-        /** 
+        /**
           * gets the total volume available to be used.
           * does not guarantee that an item of that size can be inserted.
           */
@@ -85,6 +84,8 @@ class item_contents
         /** returns the best quality of the id that's contained in the item in CONTAINER pockets */
         int best_quality( const quality_id &id ) const;
 
+        // what will the move cost be of taking @it out of this container?
+        int obtain_cost( const item &it ) const;
         // what will the move cost be of storing @it into this container? (CONTAINER pocket type)
         int insert_cost( const item &it ) const;
         ret_val<bool> insert_item( const item &it, item_pocket::pocket_type pk_type );
@@ -123,7 +124,8 @@ class item_contents
 
         // whether the contents has a pocket with the associated type
         bool has_pocket_type( const item_pocket::pocket_type pk_type ) const;
-        bool has_any_with( const std::function<bool( const item & )> &filter, item_pocket::pocket_type pk_type ) const;
+        bool has_any_with( const std::function<bool( const item & )> &filter,
+                           item_pocket::pocket_type pk_type ) const;
 
         void remove_rotten( const tripoint &pnt );
         /**
@@ -131,7 +133,7 @@ class item_contents
          * NOTE: this destroys the items that get processed
          */
         void process( player *carrier, const tripoint &pos, bool activate, float insulation = 1,
-            temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
+                      temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
 
         void migrate_item( item &obj, const std::set<itype_id> &migrations );
         bool item_has_uses_recursive() const;
@@ -159,7 +161,7 @@ class item_contents
                                                 item_pocket::pocket_type pk_type = item_pocket::pocket_type::CONTAINER );
 
         ret_val<const item_pocket *> find_pocket_for( const item &it,
-            item_pocket::pocket_type pk_type = item_pocket::pocket_type::CONTAINER ) const;
+                item_pocket::pocket_type pk_type = item_pocket::pocket_type::CONTAINER ) const;
 
         std::list<item_pocket> contents;
 };

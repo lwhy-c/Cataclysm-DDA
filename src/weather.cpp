@@ -211,7 +211,7 @@ void item::add_rain_to_container( bool acid, int charges )
             "water_acid",
             "water_acid_weak"
         };
-        item *found_liq = contents.get_item_with( [&]( const item &liquid ) {
+        item *found_liq = contents.get_item_with( [&]( const item & liquid ) {
             return allowed_liquid_types.count( liquid.typeId() );
         } );
         if( found_liq == nullptr ) {

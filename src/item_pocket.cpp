@@ -46,7 +46,7 @@ void pocket_data::load( const JsonObject &jo )
     }
     optional( jo, was_loaded, "spoil_multiplier", spoil_multiplier, 1.0f );
     optional( jo, was_loaded, "weight_multiplier", weight_multiplier, 1.0f );
-    optional( jo, was_loaded, "magazine_well", magazine_well,volume_reader(), 0_ml );
+    optional( jo, was_loaded, "magazine_well", magazine_well, volume_reader(), 0_ml );
     optional( jo, was_loaded, "moves", moves, 100 );
     optional( jo, was_loaded, "fire_protection", fire_protection, false );
     optional( jo, was_loaded, "watertight", watertight, false );
@@ -215,14 +215,14 @@ std::list<const item *> item_pocket::all_items_top() const
 
 std::list<item *> item_pocket::all_items_ptr( item_pocket::pocket_type pk_type )
 {
-    if( !is_type( pk_type ) )
-    {
+    if( !is_type( pk_type ) ) {
         return std::list<item *>();
     }
     std::list<item *> all_items_top_level{ all_items_top() };
     for( item *it : all_items_top_level ) {
         std::list<item *> all_items_internal{ it->contents.all_items_ptr( pk_type ) };
-        all_items_top_level.insert( all_items_top_level.end(), all_items_internal.begin(), all_items_internal.end() );
+        all_items_top_level.insert( all_items_top_level.end(), all_items_internal.begin(),
+                                    all_items_internal.end() );
     }
     return all_items_top_level;
 }
@@ -235,12 +235,13 @@ std::list<const item *> item_pocket::all_items_ptr( item_pocket::pocket_type pk_
     std::list<const item *> all_items_top_level{ all_items_top() };
     for( const item *it : all_items_top_level ) {
         std::list<const item *> all_items_internal{ it->contents.all_items_ptr( pk_type ) };
-        all_items_top_level.insert( all_items_top_level.end(), all_items_internal.begin(), all_items_internal.end() );
+        all_items_top_level.insert( all_items_top_level.end(), all_items_internal.begin(),
+                                    all_items_internal.end() );
     }
     return all_items_top_level;
 }
 
-bool item_pocket::has_any_with( const std::function<bool( const item & it )> &filter ) const
+bool item_pocket::has_any_with( const std::function<bool( const item &it )> &filter ) const
 {
     return std::any_of( contents.begin(), contents.end(), filter );
 }
@@ -390,8 +391,7 @@ void item_pocket::handle_liquid_or_spill( Character &guy )
             item liquid( *iter );
             iter = contents.erase( iter );
             liquid_handler::handle_all_liquid( liquid, 1 );
-        }
-        else {
+        } else {
             item i_copy( *iter );
             contents.erase( iter );
             guy.i_add_or_drop( i_copy );
@@ -497,57 +497,57 @@ void item_pocket::general_info( std::vector<iteminfo> &info, int pocket_number,
 {
     const std::string space = "  ";
 
-        if( disp_pocket_number ) {
-            const std::string pocket_translate = _( "Pocket" );
-            const std::string pocket_num = string_format( "%s %d:", pocket_translate, pocket_number );
-            info.emplace_back( "DESCRIPTION", pocket_num );
-        }
-        if( data->rigid ) {
-            info.emplace_back( "DESCRIPTION", _( "This pocket is <info>rigid</info>." ) );
-        }
-        if( data->min_item_volume > 0_ml ) {
-            const std::string min_vol_translation = _( "Minimum volume of item allowed:" );
-            info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", min_vol_translation,
-                               vol_to_string( data->min_item_volume ) ) );
-        }
+    if( disp_pocket_number ) {
+        const std::string pocket_translate = _( "Pocket" );
+        const std::string pocket_num = string_format( "%s %d:", pocket_translate, pocket_number );
+        info.emplace_back( "DESCRIPTION", pocket_num );
+    }
+    if( data->rigid ) {
+        info.emplace_back( "DESCRIPTION", _( "This pocket is <info>rigid</info>." ) );
+    }
+    if( data->min_item_volume > 0_ml ) {
+        const std::string min_vol_translation = _( "Minimum volume of item allowed:" );
+        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", min_vol_translation,
+                           vol_to_string( data->min_item_volume ) ) );
+    }
 
-        const std::string max_vol_translation = _( "Volume Capacity:" );
-        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", max_vol_translation,
-                           vol_to_string( data->max_contains_volume ) ) );
-        const std::string max_weight_translation = _( "Weight Capacity:" );
-        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", max_weight_translation,
-                           weight_to_string( data->max_contains_weight ) ) );
+    const std::string max_vol_translation = _( "Volume Capacity:" );
+    info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", max_vol_translation,
+                       vol_to_string( data->max_contains_volume ) ) );
+    const std::string max_weight_translation = _( "Weight Capacity:" );
+    info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%s</neutral>", max_weight_translation,
+                       weight_to_string( data->max_contains_weight ) ) );
 
-        const std::string base_moves_translation = _( "Base moves to take an item out:" );
-        info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%d</neutral>", base_moves_translation,
-                           data->moves ) );
+    const std::string base_moves_translation = _( "Base moves to take an item out:" );
+    info.emplace_back( "DESCRIPTION", string_format( "%s <neutral>%d</neutral>", base_moves_translation,
+                       data->moves ) );
 
-        if( data->watertight ) {
-            info.emplace_back( "DESCRIPTION",
-                               _( "This pocket can <info>contain a liquid</info>." ) );
-        }
-        if( data->gastight ) {
-            info.emplace_back( "DESCRIPTION",
-                               _( "This pocket can <info>contain a gas</info>." ) );
-        }
-        if( data->open_container ) {
-            info.emplace_back( "DESCRIPTION",
-                               _( "This pocket will <bad>spill</bad> if placed into another item or worn." ) );
-        }
-        if( data->fire_protection ) {
-            info.emplace_back( "DESCRIPTION",
-                               _( "This pocket <info>protects its contents from fire</info>." ) );
-        }
-        if( data->spoil_multiplier != 1.0f ) {
-            info.emplace_back( "DESCRIPTION",
-                               _( "This pocket makes contained items spoil at <neutral>%.0f%%</neutral> their original rate." ),
-                               data->spoil_multiplier * 100 );
-        }
-        if( data->weight_multiplier != 1.0f ) {
-            info.emplace_back( "DESCRIPTION",
-                               _( "Items in this pocket weigh <neutral>%.0f%%</neutral> their original weight." ),
-                               data->weight_multiplier * 100 );
-        }
+    if( data->watertight ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "This pocket can <info>contain a liquid</info>." ) );
+    }
+    if( data->gastight ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "This pocket can <info>contain a gas</info>." ) );
+    }
+    if( data->open_container ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "This pocket will <bad>spill</bad> if placed into another item or worn." ) );
+    }
+    if( data->fire_protection ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "This pocket <info>protects its contents from fire</info>." ) );
+    }
+    if( data->spoil_multiplier != 1.0f ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "This pocket makes contained items spoil at <neutral>%.0f%%</neutral> their original rate." ),
+                           data->spoil_multiplier * 100 );
+    }
+    if( data->weight_multiplier != 1.0f ) {
+        info.emplace_back( "DESCRIPTION",
+                           _( "Items in this pocket weigh <neutral>%.0f%%</neutral> their original weight." ),
+                           data->weight_multiplier * 100 );
+    }
 }
 
 void item_pocket::contents_info( std::vector<iteminfo> &info, int pocket_number,
@@ -610,10 +610,9 @@ ret_val<item_pocket::contain_code> item_pocket::can_contain( const item &it ) co
     if( data->type == item_pocket::pocket_type::MOD ) {
         if( it.is_toolmod() || it.is_gunmod() ) {
             return ret_val<item_pocket::contain_code>::make_success();
-        }
-        else {
+        } else {
             return ret_val<item_pocket::contain_code>::make_failure(
-                contain_code::ERR_MOD, _( "only mods can go into mod pocket" ) );
+                       contain_code::ERR_MOD, _( "only mods can go into mod pocket" ) );
         }
     }
     if( it.made_of( phase_id::LIQUID ) ) {
@@ -850,7 +849,7 @@ void item_pocket::remove_rotten( const tripoint &pnt )
 }
 
 void item_pocket::process( player *carrier, const tripoint &pos, bool activate, float insulation,
-    temperature_flag flag, float spoil_multiplier )
+                           temperature_flag flag, float spoil_multiplier )
 {
     const bool will_not_spoil = !data->resealable && _sealed;
 
@@ -917,8 +916,8 @@ std::list<item> &item_pocket::edit_contents()
 void item_pocket::migrate_item( item &obj, const std::set<itype_id> &migrations )
 {
     for( const std::string &c : migrations ) {
-        if( std::none_of( contents.begin(), contents.end(), [&]( const item &e ) {
-            return e.typeId() == c;
+        if( std::none_of( contents.begin(), contents.end(), [&]( const item & e ) {
+        return e.typeId() == c;
         } ) ) {
             add( item( c, obj.birthday() ) );
         }

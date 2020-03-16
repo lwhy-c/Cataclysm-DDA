@@ -550,8 +550,8 @@ task_reason veh_interact::cant_do( char mode )
             // siphon mode
             valid_target = false;
             for( const vpart_reference &vp : veh->get_any_parts( VPFLAG_FLUIDTANK ) ) {
-                if( vp.part().base.has_item_with( []( const item &it ) {
-                    return it.made_of( LIQUID );
+                if( vp.part().base.has_item_with( []( const item & it ) {
+                return it.made_of( LIQUID );
                 } ) ) {
                     valid_target = true;
                     break;
