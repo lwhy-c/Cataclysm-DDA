@@ -55,6 +55,11 @@ class item_contents
         /** returns a list of pointers to all top-level items */
         std::list<const item *> all_items_top( item_pocket::pocket_type pk_type ) const;
 
+        /** returns a list of pointers to all top-level items that are not mods */
+        std::list<item *> all_items_top();
+        /** returns a list of pointers to all top-level items that are not mods */
+        std::list<const item *> all_items_top() const;
+
         // returns a list of pointers to all items inside recursively
         std::list<item *> all_items_ptr( item_pocket::pocket_type pk_type );
         // returns a list of pointers to all items inside recursively
@@ -106,7 +111,17 @@ class item_contents
 
         item *get_item_with( const std::function<bool( const item & )> &filter );
 
+        // whether the contents has a pocket with the associated type
+        bool has_pocket_type( const item_pocket::pocket_type pk_type ) const;
         bool has_any_with( const std::function<bool( const item & )> &filter, item_pocket::pocket_type pk_type ) const;
+
+        void remove_rotten( const tripoint &pnt );
+        /**
+         * Is part of the recursive call of item::process. see that function for additional comments
+         * NOTE: this destroys the items that get processed
+         */
+        void process( player *carrier, const tripoint &pos, bool activate, float insulation = 1,
+            temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
 
         void migrate_item( item &obj, const std::set<itype_id> &migrations );
         bool item_has_uses_recursive() const;

@@ -626,6 +626,17 @@ class item : public visitable<item>
         /** Permits filthy components, should only be used as a helper in creating filters */
         bool allow_crafting_component() const;
 
+        /**
+         * @name Containers
+         *
+         * Containers come in two flavors:
+         * - suitable for liquids (@ref is_watertight_container),
+         * - and the remaining one (they are for currently only for flavor).
+         */
+         /*@{*/
+         /** Whether this is container. Note that container does not necessarily means it's
+          * suitable for liquids. */
+        bool is_container() const;
         /** Whether this is a container which can be used to store liquids. */
         bool is_watertight_container() const;
         /** Whether this item has no contents at all. */
@@ -706,10 +717,11 @@ class item : public visitable<item>
         /**
          * Whether the item has to be removed as it has rotten away completely. May change the item as it calls process_temperature_rot()
          * @param pnt The *absolute* position of the item in the world (see @ref map::getabs),
+         * @param spoil_multiplier the multiplier for spoilage rate, based on what this item is inside of.
          * used for rot calculation.
          * @return true if the item has rotten away and should be removed, false otherwise.
          */
-        bool has_rotten_away( const tripoint &pnt );
+        bool has_rotten_away( const tripoint &pnt, float spoil_multiplier = 1.0f );
 
         /**
          * Accumulate rot of the item since last rot calculation.
@@ -718,7 +730,7 @@ class item : public visitable<item>
          * @param time Time point to which rot is calculated
          * @param temp Temperature at which the rot is calculated
          */
-        void calc_rot( time_point time, int temp, const item &container );
+        void calc_rot( time_point time, int temp, const float spoli_modifier );
 
         /**
          * This is part of a workaround so that items don't rot away to nothing if the smoking rack
@@ -737,7 +749,7 @@ class item : public visitable<item>
          * @param flag to specify special temperature situations
          */
         void process_temperature_rot( float insulation, const tripoint &pos, player *carrier,
-                                      temperature_flag flag = temperature_flag::TEMP_NORMAL );
+                                      temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_modifier = 1.0f );
 
         /** Set the item to HOT */
         void heat_up();
@@ -1041,7 +1053,7 @@ class item : public visitable<item>
          * Returns false if the item is not destroyed.
          */
         bool process( player *carrier, const tripoint &pos, bool activate, float insulation = 1,
-                      temperature_flag flag = temperature_flag::TEMP_NORMAL );
+                      temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
 
         /**
          * Gets the point (vehicle tile) the cable is connected to.
@@ -2037,7 +2049,7 @@ class item : public visitable<item>
                                   const std::function<bool( const item & )> &filter = return_true<item> );
         const use_function *get_use_internal( const std::string &use_name ) const;
         bool process_internal( player *carrier, const tripoint &pos, bool activate, float insulation = 1,
-                               temperature_flag flag = temperature_flag::TEMP_NORMAL );
+                               temperature_flag flag = temperature_flag::TEMP_NORMAL, float spoil_multiplier = 1.0f );
         /**
          * Calculate the thermal energy and temperature change of the item
          * @param temp Temperature of surroundings

@@ -790,8 +790,7 @@ bool item::merge_charges( const item &rhs )
 
 void item::put_in( const item &payload, item_pocket::pocket_type pk_type )
 {
-    // what do? put_in doesn't do any checks and it's used everywhere in the code
-    contents.insert_item( payload );
+    contents.insert_item( payload, pk_type );
     on_contents_changed();
 }
 
@@ -4770,9 +4769,9 @@ int get_hourly_rotpoints_at_temp( const int temp )
     return rot_chart[temp];
 }
 
-void item::calc_rot( time_point time, int temp, const item &container )
+void item::calc_rot( time_point time, int temp, const float spoil_modifier )
 {
-    if( !goes_bad() ) {
+    if( !goes_bad() || spoil_modifier == 0.0f ) {
         return;
     }
     // Avoid needlessly calculating already rotten things.  Corpses should
@@ -4789,12 +4788,12 @@ void item::calc_rot( time_point time, int temp, const item &container )
         return;
     }
     // rot modifier
-    float factor = 1.0;
+    float factor = spoil_modifier;
     if( is_corpse() && has_flag( flag_FIELD_DRESS ) ) {
-        factor = 0.75;
+        factor *= 0.75;
     }
     if( item_tags.count( "MUSHY" ) ) {
-        factor = 3.0;
+        factor *= 3.0;
     }
 
     if( item_tags.count( "COLD" ) ) {
@@ -5764,6 +5763,11 @@ bool item::is_book() const
 bool item::is_map() const
 {
     return get_category().get_id() == "maps";
+}
+
+bool item::is_container() const
+{
+    return contents.has_pocket_type( item_pocket::pocket_type::CONTAINER );
 }
 
 bool item::is_watertight_container() const
@@ -7030,23 +7034,23 @@ void item::casings_handle( const std::function<bool( item & )> &func )
     contents.casings_handle( func );
 }
 
-bool item::reload( player &u, item_location loc, int qty )
+bool item::reload( player &u, item_location ammo, int qty )
 {
     if( qty <= 0 ) {
         debugmsg( "Tried to reload zero or less charges" );
         return false;
     }
-    item *ammo = loc.get_item();
-    if( ammo == nullptr || ammo->is_null() ) {
+
+    if( !ammo ) {
         debugmsg( "Tried to reload using non-existent ammo" );
         return false;
     }
 
-    item *container = nullptr;
+    item_location container;
     if( ammo->is_ammo_container() ) {
         container = ammo;
         // i'm not sure what's going on here
-        ammo = ammo->contents.all_items_top( item_pocket::pocket_type::CONTAINER ).front();
+        ammo = item_location( ammo, ammo->contents.all_items_top( item_pocket::pocket_type::CONTAINER ).front() );
     }
 
     if( !is_reloadable_with( ammo->typeId() ) ) {
@@ -7088,7 +7092,7 @@ bool item::reload( player &u, item_location loc, int qty )
             }
         }
         if( !merged ) {
-            put_in( to_reload );
+            put_in( to_reload, item_pocket::pocket_type::MAGAZINE );
         }
     } else if( is_watertight_container() ) {
         if( !ammo->made_of_from_type( LIQUID ) ) {
@@ -7115,13 +7119,14 @@ bool item::reload( player &u, item_location loc, int qty )
             remove_item( *magazine_current() );
         }
 
-        put_in( *ammo );
-        loc.remove_item();
+        put_in( *ammo, item_pocket::pocket_type::MAGAZINE );
+        ammo.remove_item();
         return true;
 
     } else {
         if( ammo->has_flag( flag_SPEEDLOADER ) ) {
-            curammo = ammo->contents.front().type;
+            // sets curammo to one of the ammo types contained
+            curammo = ammo->contents.all_items_top( item_pocket::pocket_type::MAGAZINE ).front()->type;
             qty = std::min( qty, ammo->ammo_remaining() );
             ammo->ammo_consume( qty, tripoint_zero );
             charges += qty;
@@ -7141,11 +7146,9 @@ bool item::reload( player &u, item_location loc, int qty )
     }
 
     if( ammo->charges == 0 && !ammo->has_flag( flag_SPEEDLOADER ) ) {
-        if( container != nullptr ) {
-            remove_item( container->contents.front() );
+        ammo.remove_item();
+        if( container ) {
             u.inv.restack( u ); // emptied containers do not stack with non-empty ones
-        } else {
-            loc.remove_item();
         }
     }
     return true;
@@ -7803,12 +7806,10 @@ bool item::detonate( const tripoint &p, std::vector<item> &drops )
     } else if( !contents.empty() && ( !type->magazine || !type->magazine->protects_contents ) ) {
         std::vector<item *> removed_items;
         bool detonated = false;
-        for( const item_pocket::pocket_type pk_type : { item_pocket::pocket_type::CONTAINER, item_pocket::pocket_type::MAGAZINE } ){
-            for( item *it : contents.all_items_top( pk_type ) ) {
-                if( it->detonate( p, drops ) ) {
-                    removed_items.push_back( it );
-                    detonated = true;
-                }
+        for( item *it : contents.all_items_top() ) {
+            if( it->detonate( p, drops ) ) {
+                removed_items.push_back( it );
+                detonated = true;
             }
         }
         for( item *it : removed_items ) {
@@ -7820,36 +7821,16 @@ bool item::detonate( const tripoint &p, std::vector<item> &drops )
     return false;
 }
 
-bool item::has_rotten_away( const tripoint &pnt )
+bool item::has_rotten_away( const tripoint &pnt, float spoil_multiplier )
 {
     if( is_corpse() && goes_bad() ) {
-        process_temperature_rot( 1, pnt, nullptr );
+        process_temperature_rot( 1, pnt, nullptr, temperature_flag::TEMP_NORMAL, spoil_multiplier );
         return get_rot() > 10_days && !can_revive();
     } else if( goes_bad() ) {
-        process_temperature_rot( 1, pnt, nullptr );
+        process_temperature_rot( 1, pnt, nullptr, temperature_flag::TEMP_NORMAL, spoil_multiplier );
         return has_rotten_away();
-    } else if( type->container && type->container->preserves ) {
-        // Containers like tin cans preserves all items inside, they do not rot at all.
-        return false;
-    } else if( type->container && type->container->seals ) {
-        // Items inside rot but do not vanish as the container seals them in.
-        for( item *c : contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
-            if( c->goes_bad() ) {
-                c->process_temperature_rot( 1, pnt, nullptr );
-            }
-        }
-        return false;
     } else {
-        std::vector<item *> removed_items;
-        // Check and remove rotten contents, but always keep the container.
-        for( item *it : contents.all_items_top() ) {
-            if( it->has_rotten_away( pnt ) ) {
-                removed_items.push_back( it );
-            }
-        }
-        for( item *it : removed_items ) {
-            remove_item( *it );
-        }
+        contents.remove_rotten( pnt );
 
         return false;
     }
@@ -7972,13 +7953,14 @@ void item::apply_freezerburn()
 }
 
 void item::process_temperature_rot( float insulation, const tripoint &pos,
-                                    player *carrier, const temperature_flag flag )
+                                    player *carrier, const temperature_flag flag, float spoil_modifier )
 {
     const time_point now = calendar::turn;
 
     // if player debug menu'd the time backward it breaks stuff, just reset the
     // last_temp_check and last_rot_check in this case
-    if( now - last_temp_check < 0_turns ) {
+    // if spoil_modifier is 0 then similarly it will not rot
+    if( now - last_temp_check < 0_turns || spoil_modifier == 0.0f ) {
         reset_temp_check();
         last_rot_check = now;
         return;
@@ -8096,7 +8078,7 @@ void item::process_temperature_rot( float insulation, const tripoint &pos,
 
             // Calculate item rot from item temperature
             if( time - last_rot_check > smallest_interval ) {
-                calc_rot( time, env_temperature );
+                calc_rot( time, env_temperature, spoil_modifier );
 
                 if( has_rotten_away() || ( is_corpse() && rot > 10_days ) ) {
                     // No need to track item that will be gone
@@ -8110,7 +8092,7 @@ void item::process_temperature_rot( float insulation, const tripoint &pos,
     // and items that are held near the player
     if( now - time > smallest_interval ) {
         calc_temp( temp, insulation, now );
-        calc_rot( now, temp );
+        calc_rot( now, temp, spoil_modifier );
         return;
     }
 
@@ -8781,25 +8763,10 @@ bool item::process_blackpowder_fouling( player *carrier )
 }
 
 bool item::process( player *carrier, const tripoint &pos, bool activate, float insulation,
-                    temperature_flag flag )
+                    temperature_flag flag, float spoil_multiplier )
 {
-    const bool preserves = type->container && type->container->preserves;
-    std::vector<item *> removed_items;
-    visit_items( [&]( item * it ) {
-        if( preserves ) {
-            // Simulate that the item has already "rotten" up to last_rot_check, but as item::rot
-            // is not changed, the item is still fresh.
-            it->last_rot_check = calendar::turn;
-        }
-        if( it->process_internal( carrier, pos, activate, type->insulation_factor * insulation, flag ) ) {
-            removed_items.push_back( it );
-        }
-        return VisitResponse::NEXT;
-    } );
-    for( item *it : removed_items ) {
-        remove_item( *it );
-    }
-    return !removed_items.empty();
+    contents.process( carrier, pos, activate, insulation, flag, spoil_multiplier );
+    return process_internal( carrier, pos, activate, insulation, flag, spoil_multiplier );
 }
 
 void item::set_last_rot_check( const time_point &pt )
@@ -8808,7 +8775,7 @@ void item::set_last_rot_check( const time_point &pt )
 }
 
 bool item::process_internal( player *carrier, const tripoint &pos, bool activate,
-                             float insulation, const temperature_flag flag )
+                             float insulation, const temperature_flag flag, float spoil_modifier )
 {
     if( has_flag( flag_ETHEREAL_ITEM ) ) {
         if( !has_var( "ethereal" ) ) {
@@ -8890,7 +8857,7 @@ bool item::process_internal( player *carrier, const tripoint &pos, bool activate
     }
     // All foods that go bad have temperature
     if( has_temperature() ) {
-        process_temperature_rot( insulation, pos, carrier, flag );
+        process_temperature_rot( insulation, pos, carrier, flag, spoil_modifier );
     }
 
     return false;
@@ -8984,11 +8951,9 @@ bool item::is_dangerous() const
 
     // Note: Item should be dangerous regardless of what type of a container is it
     // Visitable interface would skip some options
-    for( const item_pocket::pocket_type pk_type : { item_pocket::pocket_type::CONTAINER, item_pocket::pocket_type::MAGAZINE } ) {
-        for( const item *it : contents.all_items_top( pk_type ) ) {
-            if( it->is_dangerous() ) {
-                return true;
-            }
+    for( const item *it : contents.all_items_top() ) {
+        if( it->is_dangerous() ) {
+            return true;
         }
     }
     return false;

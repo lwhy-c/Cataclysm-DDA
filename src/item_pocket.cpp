@@ -825,6 +825,37 @@ void item_pocket::has_rotten_away( const tripoint &pnt )
     }
 }
 
+void item_pocket::remove_rotten( const tripoint &pnt )
+{
+    bool will_not_spoil = !data->resealable && _sealed;
+
+    for( auto iter = contents.begin(); iter != contents.end(); ) {
+        if( iter->has_rotten_away( pnt, will_not_spoil ? 0.0f : data->spoil_multiplier ) ) {
+            iter = contents.erase( iter );
+        } else {
+            ++iter;
+        }
+    }
+}
+
+void item_pocket::process( player *carrier, const tripoint &pos, bool activate, float insulation,
+    temperature_flag flag, float spoil_multiplier )
+{
+    const bool will_not_spoil = !data->resealable && _sealed;
+
+    if( will_not_spoil ) {
+        spoil_multiplier = 0.0f;
+    }
+
+    for( auto iter = contents.begin(); iter != contents.end(); ) {
+        if( iter->process( carrier, pos, activate, insulation, flag, spoil_multiplier ) ) {
+            iter = contents.erase( iter );
+        } else {
+            ++iter;
+        }
+    }
+}
+
 bool item_pocket::empty() const
 {
     return contents.empty();

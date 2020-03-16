@@ -5,6 +5,12 @@
 #include "item.h"
 #include "map.h"
 
+
+static const std::vector<item_pocket::pocket_type> avail_types{
+    item_pocket::pocket_type::CONTAINER,
+    item_pocket::pocket_type::MAGAZINE
+};
+
 bool item_contents::empty() const
 {
     if( contents.empty() ) {
@@ -216,6 +222,16 @@ void item_contents::migrate_item( item &obj, const std::set<itype_id> &migration
     }
 }
 
+bool item_contents::has_pocket_type( const item_pocket::pocket_type pk_type ) const
+{
+    for( const item_pocket &pocket : contents ) {
+        if( pocket.is_type( pk_type ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool item_contents::has_any_with( const std::function<bool( const item &it )> &filter, item_pocket::pocket_type pk_type ) const
 {
     for( const item_pocket pocket : contents ) {
@@ -291,6 +307,26 @@ std::list<const item *> item_contents::all_items_top( item_pocket::pocket_type p
     return all_items_internal;
 }
 
+std::list<item *> item_contents::all_items_top()
+{
+    std::list<item *> ret;
+    for( const item_pocket::pocket_type pk_type : avail_types ) {
+        std::list<item *> top{ all_items_top( pk_type ) };
+        ret.insert( ret.end(), top.begin(), top.end() );
+    }
+    return ret;
+}
+
+std::list<const item *> item_contents::all_items_top() const
+{
+    std::list<const item *> ret;
+    for( const item_pocket::pocket_type pk_type : avail_types ) {
+        std::list<const item *> top{ all_items_top( pk_type ) };
+        ret.insert( ret.end(), top.begin(), top.end() );
+    }
+    return ret;
+}
+
 std::list<item *> item_contents::all_items_ptr( item_pocket::pocket_type pk_type )
 {
     std::list<item *> all_items_internal;
@@ -361,6 +397,27 @@ units::volume item_contents::remaining_container_capacity() const
         }
     }
     return total_vol;
+}
+
+void item_contents::remove_rotten( const tripoint &pnt )
+{
+    for( item_pocket &pocket : contents ) {
+        // no reason to check mods, they won't rot
+        if( !pocket.is_type( item_pocket::pocket_type::MOD ) ) {
+            pocket.remove_rotten( pnt );
+        }
+    }
+}
+
+void item_contents::process( player *carrier, const tripoint &pos, bool activate, float insulation,
+    temperature_flag flag, float spoil_multiplier )
+{
+    for( item_pocket &pocket : contents ) {
+        // no reason to check mods, they won't rot
+        if( !pocket.is_type( item_pocket::pocket_type::MOD ) ) {
+            pocket.process( carrier, pos, activate, insulation, flag, spoil_multiplier );
+        }
+    }
 }
 
 int item_contents::remaining_capacity_for_liquid( const item &liquid ) const
