@@ -3905,52 +3905,48 @@ void player::use( int inventory_position )
 
 void player::use( item_location loc )
 {
-    item &used = *loc.get_item();
-
-    if( used.is_null() ) {
+    if( !loc ) {
         add_msg( m_info, _( "You do not have that item." ) );
         return;
     }
 
-    last_item = used.typeId();
+    last_item = loc->typeId();
 
-    if( used.is_tool() ) {
-        if( !used.type->has_use() ) {
-            add_msg_if_player( _( "You can't do anything interesting with your %s." ), used.tname() );
+    if( loc->is_tool() ) {
+        if( !loc->type->has_use() ) {
+            add_msg_if_player( _( "You can't do anything interesting with your %s." ), loc->tname() );
             return;
         }
-        invoke_item( &used, loc.position() );
+        invoke_item( loc.get_item(), loc.position() );
 
-    } else if( used.type->can_use( "DOGFOOD" ) ||
-               used.type->can_use( "CATFOOD" ) ||
-               used.type->can_use( "BIRDFOOD" ) ||
-               used.type->can_use( "CATTLEFODDER" ) ) {
-        invoke_item( &used, loc.position() );
+    } else if( loc->type->can_use( "DOGFOOD" ) ||
+               loc->type->can_use( "CATFOOD" ) ||
+               loc->type->can_use( "BIRDFOOD" ) ||
+               loc->type->can_use( "CATTLEFODDER" ) ) {
+        invoke_item( loc.get_item(), loc.position() );
 
-    } else if( !used.is_craft() && ( used.is_medication() || ( !used.type->has_use() &&
-                                     ( used.is_food() ||
-                                       used.get_contained().is_food() ||
-                                       used.get_contained().is_medication() ) ) ) ) {
+    } else if( !loc->is_craft() && ( loc->is_medication() || ( !loc->type->has_use() &&
+                                     loc->is_food() ) ) ) {
         consume( loc );
 
-    } else if( used.is_book() ) {
+    } else if( loc->is_book() ) {
         // TODO: Handle this with dynamic dispatch.
         if( avatar *u = as_avatar() ) {
-            u->read( used );
+            u->read( *loc );
         }
-    } else if( used.type->has_use() ) {
-        invoke_item( &used, loc.position() );
-    } else if( used.has_flag( flag_SPLINT ) ) {
-        ret_val<bool> need_splint = can_wear( used );
+    } else if( loc->type->has_use() ) {
+        invoke_item( loc.get_item(), loc.position() );
+    } else if( loc->has_flag( flag_SPLINT ) ) {
+        ret_val<bool> need_splint = can_wear( *loc );
         if( need_splint.success() ) {
-            wear_item( used );
+            wear_item( *loc );
             loc.remove_item();
         } else {
             add_msg( m_info, need_splint.str() );
         }
     } else {
         add_msg( m_info, _( "You can't do anything interesting with your %s." ),
-                 used.tname() );
+                 loc->tname() );
     }
 }
 
@@ -4768,10 +4764,6 @@ std::string player::weapname( unsigned int truncate ) const
         }
         return str;
 
-    } else if( weapon.is_container() && weapon.contents.num_item_stacks() == 1 ) {
-        return string_format( "%s (%d)", weapon.tname(),
-                              weapon.contents.legacy_front().charges );
-
     } else if( !is_armed() ) {
         return _( "fists" );
 
@@ -4784,7 +4776,6 @@ bool player::wield_contents( item &container, item *internal_item, bool penaltie
 {
     // if index not specified and container has multiple items then ask the player to choose one
     if( internal_item == nullptr ) {
-        std::list<item> all_items = container.contents.all_items();
         std::vector<std::string> opts;
         std::list<item *> container_contents = container.contents.all_items_top();
         std::transform( container_contents.begin(), container_contents.end(),
@@ -4797,7 +4788,7 @@ bool player::wield_contents( item &container, item *internal_item, bool penaltie
                 return false;
             }
         } else {
-            internal_item = &container.contents.legacy_front();
+            internal_item = container_contents.front();
         }
     }
 
@@ -5402,17 +5393,17 @@ void player::place_corpse()
             cbm.set_flag( "NO_STERILE" );
             cbm.set_flag( "NO_PACKED" );
             cbm.faults.emplace( fault_id( "fault_bionic_salvaged" ) );
-            body.put_in( cbm );
+            body.put_in( cbm, item_pocket::pocket_type::CORPSE );
         }
     }
 
     // Restore amount of installed pseudo-modules of Power Storage Units
     std::pair<int, int> storage_modules = amount_of_storage_bionics();
     for( int i = 0; i < storage_modules.first; ++i ) {
-        body.put_in( item( "bio_power_storage" ) );
+        body.put_in( item( "bio_power_storage" ), item_pocket::pocket_type::CORPSE );
     }
     for( int i = 0; i < storage_modules.second; ++i ) {
-        body.put_in( item( "bio_power_storage_mkII" ) );
+        body.put_in( item( "bio_power_storage_mkII" ), item_pocket::pocket_type::CORPSE );
     }
     g->m.add_item_or_charges( pos(), body );
 }
@@ -5446,17 +5437,17 @@ void player::place_corpse( const tripoint &om_target )
     }
     for( const bionic &bio : *my_bionics ) {
         if( item::type_is_defined( bio.id.str() ) ) {
-            body.put_in( item( bio.id.str(), calendar::turn ) );
+            body.put_in( item( bio.id.str(), calendar::turn ), item_pocket::pocket_type::CORPSE );
         }
     }
 
     // Restore amount of installed pseudo-modules of Power Storage Units
     std::pair<int, int> storage_modules = amount_of_storage_bionics();
     for( int i = 0; i < storage_modules.first; ++i ) {
-        body.put_in( item( "bio_power_storage" ) );
+        body.put_in( item( "bio_power_storage" ), item_pocket::pocket_type::CORPSE );
     }
     for( int i = 0; i < storage_modules.second; ++i ) {
-        body.put_in( item( "bio_power_storage_mkII" ) );
+        body.put_in( item( "bio_power_storage_mkII" ), item_pocket::pocket_type::CORPSE );
     }
     bay.add_item_or_charges( point( finX, finY ), body );
 }

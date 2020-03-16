@@ -33,7 +33,15 @@ ret_val<bool> item_contents::insert_item( const item &it, item_pocket::pocket_ty
 {
     ret_val<item_pocket *> pocket = find_pocket_for( it, pk_type );
     if( !pocket.success() ) {
-        return ret_val<bool>::make_failure( pocket.str() );
+        if( pk_type == item_pocket::pocket_type::CORPSE ) {
+            static pocket_data flesh_data;
+            flesh_data.type = item_pocket::pocket_type::CORPSE;
+
+            contents.push_back( item_pocket( &flesh_data ) );
+            return insert_item( it, pk_type );
+        } else {
+            return ret_val<bool>::make_failure( pocket.str() );
+        }
     }
     ret_val<item_pocket::contain_code> pocket_contain_code = pocket.value()->insert_item( it );
     if( pocket_contain_code.success() ) {

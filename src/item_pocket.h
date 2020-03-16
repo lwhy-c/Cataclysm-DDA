@@ -32,6 +32,7 @@ class item_pocket
             CONTAINER,
             MAGAZINE,
             MOD, // the gunmods or toolmods
+            CORPSE, // the "corpse" pocket - bionics embedded in a corpse
             LAST
         };
         enum class contain_code {
