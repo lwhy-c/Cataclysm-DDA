@@ -29,6 +29,52 @@ size_t item_contents::size() const
     return contents.size();
 }
 
+ret_val<item_pocket *> item_contents::find_pocket_for( const item &it,
+    item_pocket::pocket_type pk_type )
+{
+    static item_pocket *null_pocket = nullptr;
+    ret_val<item_pocket *> ret = ret_val<item_pocket *>::make_failure( null_pocket,
+        _( "is not a container" ) );
+    for( item_pocket &pocket : contents ) {
+        if( !pocket.is_type( pk_type ) ) {
+            continue;
+        }
+        ret_val<item_pocket::contain_code> ret_contain = pocket.can_contain( it );
+        if( ret_contain.success() ) {
+            return ret_val<item_pocket *>::make_success( &pocket, ret_contain.str() );
+        }
+    }
+    return ret;
+}
+
+ret_val<const item_pocket *> item_contents::find_pocket_for( const item &it,
+    item_pocket::pocket_type pk_type ) const
+{
+    static item_pocket *null_pocket = nullptr;
+    ret_val<const item_pocket *> ret = ret_val<const item_pocket *>::make_failure( null_pocket,
+        _( "is not a container" ) );
+    for( const item_pocket &pocket : contents ) {
+        if( !pocket.is_type( pk_type ) ) {
+            continue;
+        }
+        ret_val<item_pocket::contain_code> ret_contain = pocket.can_contain( it );
+        if( ret_contain.success() ) {
+            return ret_val<const item_pocket *>::make_success( &pocket, ret_contain.str() );
+        }
+    }
+    return ret;
+}
+
+int item_contents::insert_cost( const item &it ) const
+{
+    ret_val<const item_pocket *> pocket = find_pocket_for( it, item_pocket::pocket_type::CONTAINER );
+    if( pocket.success() ) {
+        return pocket.value()->moves();
+    } else {
+        return -1;
+    }
+}
+
 ret_val<bool> item_contents::insert_item( const item &it, item_pocket::pocket_type pk_type )
 {
     ret_val<item_pocket *> pocket = find_pocket_for( it, pk_type );
@@ -165,6 +211,13 @@ bool item_contents::spill_contents( const tripoint &pos )
     return spilled;
 }
 
+void item_contents::overflow( const tripoint &pos )
+{
+    for( item_pocket &pocket : contents ) {
+        pocket.overflow( pos );
+    }
+}
+
 void item_contents::heat_up()
 {
     for( item_pocket &pocket : contents ) {
@@ -224,9 +277,22 @@ const item &item_contents::first_ammo() const
     return null_item_reference();
 }
 
+bool item_contents::spill_open_pockets( Character &guy )
+{
+    for( item_pocket &pocket : contents ) {
+        if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) && pocket.will_spill() ) {
+            pocket.handle_liquid_or_spill( guy );
+            if( !pocket.empty() ) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 void item_contents::handle_liquid_or_spill( Character &guy )
 {
-    for( item_pocket pocket : contents ) {
+    for( item_pocket &pocket : contents ) {
         if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) ) {
             pocket.handle_liquid_or_spill( guy );
         }
@@ -426,6 +492,17 @@ units::volume item_contents::remaining_container_capacity() const
     for( const item_pocket &pocket : contents ) {
         if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) ) {
             total_vol += pocket.remaining_volume();
+        }
+    }
+    return total_vol;
+}
+
+units::volume item_contents::total_contained_volume() const
+{
+    units::volume total_vol = 0_ml;
+    for( const item_pocket &pocket : contents ) {
+        if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) ) {
+            total_vol += pocket.contains_volume();
         }
     }
     return total_vol;

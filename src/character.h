@@ -1073,6 +1073,7 @@ class Character : public Creature, public visitable<Character>
         std::list<item> remove_worn_items_with( std::function<bool( item & )> filter );
 
         // returns a list of all pointers the character has, including items contained in other items.
+        // only for CONTAINER pocket type; does not look for magazines
         std::list<item *> all_items_ptr();
 
         /** Return the itemposition of the item with given invlet, return nullptr if

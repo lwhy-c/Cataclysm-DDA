@@ -78,12 +78,15 @@ class item_contents
           */
         units::volume total_container_capacity() const;
         units::volume remaining_container_capacity() const;
+        units::volume total_contained_volume() const;
         // gets the number of charges of liquid that can fit into the rest of the space
         int remaining_capacity_for_liquid( const item &liquid ) const;
 
         /** returns the best quality of the id that's contained in the item in CONTAINER pockets */
         int best_quality( const quality_id &id ) const;
 
+        // what will the move cost be of storing @it into this container? (CONTAINER pocket type)
+        int insert_cost( const item &it ) const;
         ret_val<bool> insert_item( const item &it, item_pocket::pocket_type pk_type );
         // fills the contents to the brim of this item
         void fill_with( const item &contained );
@@ -98,6 +101,8 @@ class item_contents
 
         void on_pickup( Character &guy );
         bool spill_contents( const tripoint &pos );
+        // spill items that don't fit in the container
+        void overflow( const tripoint &pos );
         void clear_items();
 
         // heats up the contents if they have temperature
@@ -111,6 +116,7 @@ class item_contents
         const item &first_ammo() const;
         // spills all liquid from the container. removing liquid from a magazine requires unload logic.
         void handle_liquid_or_spill( Character &guy );
+        bool spill_open_pockets( Character &guy );
         void casings_handle( const std::function<bool( item & )> &func );
 
         item *get_item_with( const std::function<bool( const item & )> &filter );
@@ -151,6 +157,9 @@ class item_contents
         // returns nullptr if none is found
         ret_val<item_pocket *> find_pocket_for( const item &it,
                                                 item_pocket::pocket_type pk_type = item_pocket::pocket_type::CONTAINER );
+
+        ret_val<const item_pocket *> find_pocket_for( const item &it,
+            item_pocket::pocket_type pk_type = item_pocket::pocket_type::CONTAINER ) const;
 
         std::list<item_pocket> contents;
 };

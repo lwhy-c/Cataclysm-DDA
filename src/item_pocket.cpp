@@ -423,6 +423,11 @@ bool item_pocket::will_explode_in_a_fire() const
     } );
 }
 
+bool item_pocket::will_spill() const
+{
+    return data->open_container || ( !data->resealable && !_sealed );
+}
+
 bool item_pocket::detonate( const tripoint &pos, std::vector<item> &drops )
 {
     const auto new_end = std::remove_if( contents.begin(), contents.end(), [&pos, &drops]( item & it ) {
@@ -596,6 +601,12 @@ void item_pocket::contents_info( std::vector<iteminfo> &info, int pocket_number,
 
 ret_val<item_pocket::contain_code> item_pocket::can_contain( const item &it ) const
 {
+    if( data->type == item_pocket::pocket_type::CORPSE ) {
+        // corpses can't have items stored in them the normal way,
+        // we simply don't want them to "spill"
+        return ret_val<item_pocket::contain_code>::make_success();
+    }
+
     if( data->type == item_pocket::pocket_type::MOD ) {
         if( it.is_toolmod() || it.is_gunmod() ) {
             return ret_val<item_pocket::contain_code>::make_success();
@@ -724,7 +735,7 @@ cata::optional<item> item_pocket::remove_item( const item_location &it )
 
 void item_pocket::overflow( const tripoint &pos )
 {
-    if( is_type( item_pocket:: pocket_type::MOD ) ) {
+    if( is_type( item_pocket::pocket_type::MOD ) || is_type( item_pocket::pocket_type::CORPSE ) ) {
         return;
     }
     if( empty() ) {

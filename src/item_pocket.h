@@ -114,6 +114,8 @@ class item_pocket
         void casings_handle( const std::function<bool( item & )> &func );
         bool use_amount( const itype_id &it, int &quantity, std::list<item> &used );
         bool will_explode_in_a_fire() const;
+        // will the items inside this pocket fall out of this pocket if it is placed into another item?
+        bool will_spill() const;
         bool detonate( const tripoint &p, std::vector<item> &drops );
         bool process( const itype &type, player *carrier, const tripoint &pos, bool activate,
                       float insulation, temperature_flag flag );

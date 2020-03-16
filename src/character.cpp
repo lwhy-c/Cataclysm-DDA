@@ -1632,12 +1632,12 @@ std::list<item *> Character::all_items_ptr()
     std::list<item *> ret;
     if( has_weapon() ) {
         ret.push_back( &weapon );
-        std::list<item *> weapon_internal_items{ weapon.contents.all_items_ptr() };
+        std::list<item *> weapon_internal_items{ weapon.contents.all_items_ptr( item_pocket::pocket_type::CONTAINER ) };
         ret.insert( ret.end(), weapon_internal_items.begin(), weapon_internal_items.end() );
     }
     for( item &w : worn ) {
         ret.push_back( &w );
-        std::list<item *> worn_internal_items{ w.contents.all_items_ptr() };
+        std::list<item *> worn_internal_items{ w.contents.all_items_ptr( item_pocket::pocket_type::CONTAINER ) };
         ret.insert( ret.end(), worn_internal_items.begin(), worn_internal_items.end() );
     }
     return ret;
@@ -6717,7 +6717,7 @@ bool Character::invoke_item( item *used, const std::string &method, const tripoi
     }
     // Prevent accessing the item as it may have been deleted by the invoked iuse function.
 
-    if( used->is_tool() || used->is_medication() || used->get_contained().is_medication() ) {
+    if( used->is_tool() || actually_used->is_medication() ) {
         return consume_charges( *actually_used, charges_used );
     } else if( used->is_bionic() || used->is_deployable() || method == "place_trap" ) {
         i_rem( used );
@@ -6742,14 +6742,14 @@ bool Character::dispose_item( item_location &&obj, const std::string &prompt )
 
     std::vector<dispose_option> opts;
 
-    const bool bucket = obj->is_bucket_nonempty();
+    const bool bucket = obj->will_spill();
 
     opts.emplace_back( dispose_option{
         bucket ? _( "Spill contents and store in inventory" ) : _( "Store in inventory" ),
         can_pickVolume( *obj ), '1',
         item_handling_cost( *obj ),
         [this, bucket, &obj] {
-            if( bucket && !obj->spill_contents( *this ) )
+            if( bucket && !obj->contents.spill_open_pockets( *this ) )
             {
                 return false;
             }
@@ -8056,13 +8056,13 @@ units::volume Character::free_space() const
 {
     units::volume volume_capacity = 0_ml;
     volume_capacity += weapon.contents.remaining_container_capacity();
-    for( const item &it : weapon.contents.all_items() ) {
-        volume_capacity += it.contents.remaining_container_capacity();
+    for( const item *it : weapon.contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
+        volume_capacity += it->contents.remaining_container_capacity();
     }
     for( const item &w : worn ) {
         volume_capacity += w.contents.remaining_container_capacity();
-        for( const item &it : w.contents.all_items() ) {
-            volume_capacity += it.contents.remaining_container_capacity();
+        for( const item *it : w.contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
+            volume_capacity += it->contents.remaining_container_capacity();
         }
     }
     return volume_capacity;
@@ -8072,13 +8072,13 @@ units::volume Character::volume_capacity() const
 {
     units::volume volume_capacity = 0_ml;
     volume_capacity += weapon.contents.total_container_capacity();
-    for( const item &it : weapon.contents.all_items() ) {
-        volume_capacity += it.contents.total_container_capacity();
+    for( const item *it : weapon.contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
+        volume_capacity += it->contents.total_container_capacity();
     }
     for( const item &w : worn ) {
         volume_capacity += w.contents.total_container_capacity();
-        for( const item &it : w.contents.all_items() ) {
-            volume_capacity += it.contents.total_container_capacity();
+        for( const item *it : w.contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
+            volume_capacity += it->contents.total_container_capacity();
         }
     }
     return volume_capacity;
@@ -8088,13 +8088,13 @@ units::volume Character::volume_carried() const
 {
     units::volume volume_capacity = 0_ml;
     volume_capacity += weapon.contents.total_contained_volume();
-    for( const item &it : weapon.contents.all_items() ) {
-        volume_capacity += it.contents.total_contained_volume();
+    for( const item *it : weapon.contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
+        volume_capacity += it->contents.total_contained_volume();
     }
     for( const item &w : worn ) {
         volume_capacity += w.contents.total_contained_volume();
-        for( const item &it : w.contents.all_items() ) {
-            volume_capacity += it.contents.total_contained_volume();
+        for( const item *it : w.contents.all_items_top( item_pocket::pocket_type::CONTAINER ) ) {
+            volume_capacity += it->contents.total_contained_volume();
         }
     }
     return volume_capacity;
