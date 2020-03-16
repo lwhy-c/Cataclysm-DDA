@@ -144,7 +144,7 @@ class item_contents
          */
         VisitResponse visit_contents( const std::function<VisitResponse( item *, item * )> &func,
                                       item *parent = nullptr );
-        bool remove_internal( const std::function<bool( item & )> &filter,
+        void remove_internal( const std::function<bool( item & )> &filter,
                               int &count, std::list<item> &res );
 
         void info( std::vector<iteminfo> &info ) const;

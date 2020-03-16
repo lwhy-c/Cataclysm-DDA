@@ -519,23 +519,6 @@ item visitable<T>::remove_item( item &it )
     }
 }
 
-bool item_contents::remove_internal( const std::function<bool( item & )> &filter,
-                                     int &count, std::list<item> &res )
-{
-    for( auto it = items.begin(); it != items.end(); ) {
-        if( filter( *it ) ) {
-            res.splice( res.end(), items, it++ );
-            if( --count == 0 ) {
-                return true;
-            }
-        } else {
-            it->contents.remove_internal( filter, count, res );
-            ++it;
-        }
-    }
-    return false;
-}
-
 /** @relates visitable */
 template <>
 std::list<item> visitable<item>::remove_items_with( const std::function<bool( const item &e )>

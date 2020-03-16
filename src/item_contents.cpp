@@ -518,6 +518,16 @@ void item_contents::remove_rotten( const tripoint &pnt )
     }
 }
 
+void item_contents::remove_internal( const std::function<bool( item & )> &filter,
+    int &count, std::list<item> &res )
+{
+    for( item_pocket &pocket : contents ) {
+        if( pocket.remove_internal( filter, count, res ) ) {
+            return;
+        }
+    }
+}
+
 void item_contents::process( player *carrier, const tripoint &pos, bool activate, float insulation,
     temperature_flag flag, float spoil_multiplier )
 {

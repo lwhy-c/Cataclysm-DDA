@@ -492,6 +492,11 @@ void vpart_info::finalize()
     }
 }
 
+static bool type_can_contain( const itype &container, const itype_id &containee )
+{
+    return item( &container ).can_contain( item( containee ) );
+}
+
 void vpart_info::check()
 {
     for( auto &vp : vpart_info_all ) {
@@ -594,7 +599,7 @@ void vpart_info::check()
             debugmsg( "vehicle part %s uses undefined fuel %s", part.id.c_str(), part.item.c_str() );
             part.fuel_type = "null";
         } else if( part.fuel_type != "null" && !item::find_type( part.fuel_type )->fuel &&
-                   ( !base_item_type.container || !base_item_type.container->watertight ) ) {
+                    !type_can_contain( base_item_type, part.fuel_type ) ) {
             // HACK: Tanks are allowed to specify non-fuel "fuel",
             // because currently legacy blazemod uses it as a hack to restrict content types
             debugmsg( "non-tank vehicle part %s uses non-fuel item %s as fuel, setting to null",
@@ -1073,7 +1078,7 @@ void vehicle_prototype::finalize()
                 }
             }
 
-            if( base->container || base->magazine ) {
+            if( type_can_contain( *base, pt.fuel ) || base->magazine ) {
                 if( !item::type_is_defined( pt.fuel ) ) {
                     debugmsg( "init_vehicles: tank %s specified invalid fuel in %s", pt.part.c_str(), id.c_str() );
                 }
