@@ -1545,7 +1545,7 @@ int Character::i_add_to_container( const item &it, const bool unloading )
 
     visit_items( [ & ]( item * item ) {
         if( charges > 0 && item->is_ammo_container() &&
-            item_type == item->contents.legacy_front().typeId() ) {
+            item_type == item->contents.first_ammo().typeId() ) {
             charges = add_to_container( *item );
             item->handle_pickup_ownership( *this );
         }
