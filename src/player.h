@@ -614,7 +614,7 @@ class player : public Character
          */
         void store( item &container, item &put, bool penalties = true,
                     int base_cost = INVENTORY_HANDLING_PENALTY,
-                    item_pocket::pocket_type pk_type = item_pocket::pocket_type::LEGACY_CONTAINER );
+                    item_pocket::pocket_type pk_type = item_pocket::pocket_type::CONTAINER );
         /** Draws the UI and handles player input for the armor re-ordering window */
         void sort_armor();
         /** Uses a tool */

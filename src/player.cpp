@@ -2647,7 +2647,7 @@ bool player::consume_item( item &target )
         return false;
     }
 
-    item &comest = get_consumable_from( target );
+    item &comest = target.get_consumable_from( *this );
 
     if( comest.is_null() || target.is_craft() ) {
         add_msg_if_player( m_info, _( "You can't eat your %s." ), target.tname() );
@@ -2663,7 +2663,7 @@ bool player::consume_item( item &target )
         eat( comest ) || feed_reactor_with( comest ) || feed_furnace_with( comest ) ||
         fuel_bionic_with( comest ) ) {
 
-        if( target.is_container() ) {
+        if( &target != &comest ) {
             target.on_contents_changed();
         }
 
@@ -2683,12 +2683,7 @@ bool player::consume( item_location loc )
     if( consume_item( target ) ) {
 
         const bool was_in_container = !can_consume_as_is( target );
-
-        if( was_in_container ) {
-            i_rem( &target.contents.legacy_front() );
-        } else {
-            i_rem( &target );
-        }
+        i_rem( &loc->get_consumable_from( *this ) );
 
         //Restack and sort so that we don't lie about target's invlet
         if( inv_item ) {
@@ -3005,14 +3000,14 @@ item::reload_option player::select_ammo( const item &base,
 bool player::list_ammo( const item &base, std::vector<item::reload_option> &ammo_list,
                         bool empty ) const
 {
-    auto opts = base.gunmods();
+    std::vector<const item *> opts = base.gunmods();
     opts.push_back( &base );
 
     if( base.magazine_current() ) {
         opts.push_back( base.magazine_current() );
     }
 
-    for( const auto mod : base.gunmods() ) {
+    for( const item *mod : base.gunmods() ) {
         if( mod->magazine_current() ) {
             opts.push_back( mod->magazine_current() );
         }
@@ -3020,13 +3015,13 @@ bool player::list_ammo( const item &base, std::vector<item::reload_option> &ammo
 
     bool ammo_match_found = false;
     int ammo_search_range = is_mounted() ? -1 : 1;
-    for( const auto e : opts ) {
+    for( const item *e : opts ) {
         for( item_location &ammo : find_ammo( *e, empty, ammo_search_range ) ) {
             // don't try to unload frozen liquids
             if( ammo->is_watertight_container() && ammo->contents_made_of( SOLID ) ) {
                 continue;
             }
-            auto id = ( ammo->is_ammo_container() || ammo->is_container() )
+            itype_id id = ( ammo->is_ammo_container() || ammo->is_container() )
                       ? ammo->contents.legacy_front().typeId()
                       : ammo->typeId();
             if( e->can_reload_with( id ) ) {

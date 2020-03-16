@@ -1209,14 +1209,12 @@ bool Character::consume_effects( item &food )
         set_hunger( capacity );
     }
 
-    // Set up food for ingestion
-    const item &contained_food = food.is_container() ? food.get_contained() : food;
     // TODO: Move quench values to mL and remove the magic number here
-    units::volume water = contained_food.type->comestible->quench * 5_ml;
+    units::volume water = food.type->comestible->quench * 5_ml;
     food_summary ingested{
         water,
-        contained_food.base_volume() - std::max( water, 0_ml ),
-        compute_effective_nutrients( contained_food )
+        food.base_volume() - std::max( water, 0_ml ),
+        compute_effective_nutrients( food )
     };
     // Maybe move tapeworm to digestion
     if( has_effect( effect_tapeworm ) ) {
@@ -1487,21 +1485,8 @@ bool Character::can_consume( const item &it ) const
     if( can_consume_as_is( it ) ) {
         return true;
     }
-    // Checking NO_RELOAD to prevent consumption of `battery` when contained in `battery_car` (#20012)
-    return !it.contents.legacy_empty() && !it.has_flag( flag_NO_RELOAD ) &&
-           can_consume_as_is( it.contents.legacy_front() );
-}
-
-item &Character::get_consumable_from( item &it ) const
-{
-    if( !it.is_container_empty() && can_consume_as_is( it.contents.legacy_front() ) ) {
-        return it.contents.legacy_front();
-    } else if( can_consume_as_is( it ) ) {
-        return it;
-    }
-
-    static item null_comestible;
-    // Since it's not const.
-    null_comestible = item();
-    return null_comestible;
+    return has_item_with( [&]( const item &consumable ) {
+        // Checking NO_RELOAD to prevent consumption of `battery` when contained in `battery_car` (#20012)
+        return !consumable.has_flag( flag_NO_RELOAD ) && can_consume_as_is( consumable );
+    } );
 }

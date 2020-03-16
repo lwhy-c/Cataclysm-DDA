@@ -9314,6 +9314,32 @@ const cata::value_ptr<islot_comestible> &item::get_comestible() const
     }
 }
 
+item &item::get_consumable_from( const Character &eater )
+{
+    if( eater.can_consume_as_is( *this ) ) {
+        return *this;
+    }
+
+    item *edible = nullptr;
+    visit_items( [&edible, &eater]( item *potential ) {
+        if( eater.can_consume_as_is( *potential ) ) {
+            edible = potential;
+            return VisitResponse::ABORT;
+        }
+        return VisitResponse::NEXT;
+    } );
+
+    if( edible == nullptr ) {
+        static item null_comestible;
+        // Since it's not const.
+        null_comestible = item();
+        return null_comestible;
+    }
+
+    return *edible;
+}
+
+
 bool item::has_clothing_mod() const
 {
     for( const clothing_mod &cm : clothing_mods::get_all() ) {
