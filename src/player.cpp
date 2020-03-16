@@ -3416,8 +3416,18 @@ int player::item_reload_cost( const item &it, const item &ammo, int qty ) const
 {
     if( ammo.is_ammo() || ammo.is_frozen_liquid() ) {
         qty = std::max( std::min( ammo.charges, qty ), 1 );
-    } else if( ammo.is_ammo_container() || ammo.is_container() ) {
-        qty = clamp( qty, ammo.contents.front().charges, 1 );
+    } else if( ammo.is_ammo_container() ) {
+        int min_clamp = 0;
+        // find the first ammo in the container to get its charges
+        ammo.visit_items( [&min_clamp]( const item *it ) {
+            if( it->is_ammo() ) {
+                min_clamp = it->charges;
+                return VisitResponse::ABORT;
+            }
+            return VisitResponse::NEXT;
+        } );
+
+        qty = clamp( qty, min_clamp, 1 );
     } else if( ammo.is_magazine() ) {
         qty = 1;
     } else {
@@ -3726,42 +3736,41 @@ bool player::unload( item &it )
         } );
 
     } else if( target->ammo_remaining() ) {
-            qty = target->ammo_remaining() / PLUTONIUM_CHARGES;
-            if( qty > 0 ) {
-                add_msg( _( "You recover %i unused plutonium." ), qty );
-            } else {
-                add_msg( m_info, _( "You can't remove partially depleted plutonium!" ) );
-                return false;
-            }
-        }
-
-        // Construct a new ammo item and try to drop it
-        item ammo( target->ammo_current(), calendar::turn, qty );
-        if( target->is_filthy() ) {
-            ammo.set_flag( "FILTHY" );
-        }
-
-        if( ammo.made_of_from_type( LIQUID ) ) {
-            if( !this->add_or_drop_with_msg( ammo ) ) {
-                qty -= ammo.charges; // only handled part (or none) of the liquid
-            }
-            if( qty <= 0 ) {
-                return false; // no liquid was moved
-            }
-
-        } else if( !this->add_or_drop_with_msg( ammo, qty > 1 ) ) {
+        qty = target->ammo_remaining() / PLUTONIUM_CHARGES;
+        if( qty > 0 ) {
+            add_msg( _( "You recover %i unused plutonium." ), qty );
+        } else {
+            add_msg( m_info, _( "You can't remove partially depleted plutonium!" ) );
             return false;
         }
+    }
 
-        // If successful remove appropriate qty of ammo consuming half as much time as required to load it
-        this->moves -= this->item_reload_cost( *target, ammo, qty ) / 2;
+    // Construct a new ammo item and try to drop it
+    item ammo( target->ammo_current(), calendar::turn, qty );
+    if( target->is_filthy() ) {
+        ammo.set_flag( "FILTHY" );
+    }
 
-        if( target->ammo_current() == "plut_cell" ) {
-            qty *= PLUTONIUM_CHARGES;
+    if( ammo.made_of_from_type( LIQUID ) ) {
+        if( !this->add_or_drop_with_msg( ammo ) ) {
+            qty -= ammo.charges; // only handled part (or none) of the liquid
+        }
+        if( qty <= 0 ) {
+            return false; // no liquid was moved
         }
 
-        target->ammo_set( target->ammo_current(), target->ammo_remaining() - qty );
+    } else if( !this->add_or_drop_with_msg( ammo, qty > 1 ) ) {
+        return false;
     }
+
+    // If successful remove appropriate qty of ammo consuming half as much time as required to load it
+    this->moves -= this->item_reload_cost( *target, ammo, qty ) / 2;
+
+    if( target->ammo_current() == "plut_cell" ) {
+        qty *= PLUTONIUM_CHARGES;
+    }
+
+    target->ammo_set( target->ammo_current(), target->ammo_remaining() - qty );
 
     // Turn off any active tools
     if( target->is_tool() && target->active && target->ammo_remaining() == 0 ) {
