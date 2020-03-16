@@ -192,6 +192,30 @@ item *item_contents::magazine_current()
     return nullptr;
 }
 
+item &item_contents::first_ammo()
+{
+    for( item_pocket &pocket : contents ) {
+        if( !pocket.is_type( item_pocket::pocket_type::MAGAZINE ) || pocket.empty() ) {
+            continue;
+        }
+        return pocket.front();
+    }
+    debugmsg( "Error: Tried to get first ammo in container not containing ammo" );
+    return null_item_reference();
+}
+
+const item &item_contents::first_ammo() const
+{
+    for( const item_pocket &pocket : contents ) {
+        if( !pocket.is_type( item_pocket::pocket_type::MAGAZINE ) || pocket.empty() ) {
+            continue;
+        }
+        return pocket.front();
+    }
+    debugmsg( "Error: Tried to get first ammo in container not containing ammo" );
+    return null_item_reference();
+}
+
 void item_contents::handle_liquid_or_spill( Character &guy )
 {
     for( item_pocket pocket : contents ) {

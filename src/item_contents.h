@@ -105,6 +105,10 @@ class item_contents
         // returns qty - need
         int ammo_consume( int qty );
         item *magazine_current();
+        // gets the first ammo in all magazine pockets
+        // does not support multiple magazine pockets!
+        item &first_ammo();
+        const item &first_ammo() const;
         // spills all liquid from the container. removing liquid from a magazine requires unload logic.
         void handle_liquid_or_spill( Character &guy );
         void casings_handle( const std::function<bool( item & )> &func );

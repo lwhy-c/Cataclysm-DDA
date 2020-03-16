@@ -2804,8 +2804,8 @@ item::reload_option player::select_ammo( const item &base,
             }
         } else if( e.ammo->is_watertight_container() ||
                    ( e.ammo->is_ammo_container() && is_worn( *e.ammo ) ) ) {
-            // worn ammo containers should be named by their contents with their location also updated below
-            return e.ammo->contents.legacy_front().display_name();
+            // worn ammo containers should be named by their ammo contents with their location also updated below
+            return e.ammo->contents.first_ammo().display_name();
 
         } else {
             return ( ammo_location && ammo_location == e.ammo ? "* " : "" ) + e.ammo->display_name();
@@ -2865,7 +2865,7 @@ item::reload_option player::select_ammo( const item &base,
         row += string_format( " %-7d ", sel.moves() );
 
         if( base.is_gun() || base.is_magazine() ) {
-            const itype *ammo = sel.ammo->is_ammo_container() ? sel.ammo->contents.legacy_front().ammo_data() :
+            const itype *ammo = sel.ammo->is_ammo_container() ? sel.ammo->contents.first_ammo().ammo_data() :
                                 sel.ammo->ammo_data();
             if( ammo ) {
                 if( ammo->ammo->prop_damage ) {
@@ -2898,7 +2898,7 @@ item::reload_option player::select_ammo( const item &base,
     }
 
     for( auto i = 0; i < static_cast<int>( opts.size() ); ++i ) {
-        const item &ammo = opts[ i ].ammo->is_ammo_container() ? opts[ i ].ammo->contents.legacy_front() :
+        const item &ammo = opts[ i ].ammo->is_ammo_container() ? opts[ i ].ammo->contents.first_ammo() :
                            *opts[ i ].ammo;
 
         char hotkey = -1;
@@ -2992,7 +2992,8 @@ item::reload_option player::select_ammo( const item &base,
 
     const item_location &sel = opts[ menu.ret ].ammo;
     uistate.lastreload[ ammotype( base.ammo_default() ) ] = sel->is_ammo_container() ?
-            sel->contents.legacy_front().typeId() :
+        // get first item in all magazine pockets
+            sel->contents.first_ammo().typeId() :
             sel->typeId();
     return opts[ menu.ret ];
 }
@@ -3735,42 +3736,45 @@ bool player::unload( item &it )
             return target->magazine_current() == &e;
         } );
 
-    } else if( target->ammo_remaining() ) {
-        qty = target->ammo_remaining() / PLUTONIUM_CHARGES;
+    }
+    else if( target->ammo_remaining() ) {
+        int qty = target->ammo_remaining() / PLUTONIUM_CHARGES;
         if( qty > 0 ) {
             add_msg( _( "You recover %i unused plutonium." ), qty );
-        } else {
+        }
+        else {
             add_msg( m_info, _( "You can't remove partially depleted plutonium!" ) );
             return false;
         }
-    }
 
-    // Construct a new ammo item and try to drop it
-    item ammo( target->ammo_current(), calendar::turn, qty );
-    if( target->is_filthy() ) {
-        ammo.set_flag( "FILTHY" );
-    }
-
-    if( ammo.made_of_from_type( LIQUID ) ) {
-        if( !this->add_or_drop_with_msg( ammo ) ) {
-            qty -= ammo.charges; // only handled part (or none) of the liquid
-        }
-        if( qty <= 0 ) {
-            return false; // no liquid was moved
+        // Construct a new ammo item and try to drop it
+        item ammo( target->ammo_current(), calendar::turn, qty );
+        if( target->is_filthy() ) {
+            ammo.set_flag( "FILTHY" );
         }
 
-    } else if( !this->add_or_drop_with_msg( ammo, qty > 1 ) ) {
-        return false;
+        if( ammo.made_of_from_type( LIQUID ) ) {
+            if( !this->add_or_drop_with_msg( ammo ) ) {
+                qty -= ammo.charges; // only handled part (or none) of the liquid
+            }
+            if( qty <= 0 ) {
+                return false; // no liquid was moved
+            }
+
+        }
+        else if( !this->add_or_drop_with_msg( ammo, qty > 1 ) ) {
+            return false;
+        }
+
+        // If successful remove appropriate qty of ammo consuming half as much time as required to load it
+        this->moves -= this->item_reload_cost( *target, ammo, qty ) / 2;
+
+        if( target->ammo_current() == "plut_cell" ) {
+            qty *= PLUTONIUM_CHARGES;
+        }
+
+        target->ammo_set( target->ammo_current(), target->ammo_remaining() - qty );
     }
-
-    // If successful remove appropriate qty of ammo consuming half as much time as required to load it
-    this->moves -= this->item_reload_cost( *target, ammo, qty ) / 2;
-
-    if( target->ammo_current() == "plut_cell" ) {
-        qty *= PLUTONIUM_CHARGES;
-    }
-
-    target->ammo_set( target->ammo_current(), target->ammo_remaining() - qty );
 
     // Turn off any active tools
     if( target->is_tool() && target->active && target->ammo_remaining() == 0 ) {
