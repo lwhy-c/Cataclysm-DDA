@@ -95,7 +95,7 @@
   },
   {
     "id": "bag_canvas_small",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "canvas bag" },
     "description": "Small bag made of canvas.  Looks fine to store dried herbs in.",
@@ -103,16 +103,21 @@
     "volume": "250 ml",
     "price": 0,
     "to_hit": -5,
-    "rigid": false,
     "material": "cotton",
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "max_contains_volume": "1 L",
+        "max_contains_weight": "3 kg",
+        "moves": 400
+      }
+    ],
     "symbol": ")",
-    "color": "brown",
-    "contains": "1 L",
-    "seals": true
+    "color": "brown"
   },
   {
     "id": "bag_plastic",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "plastic bag" },
     "description": "A small, open plastic bag.  Essentially trash.",
@@ -120,16 +125,23 @@
     "volume": "10 ml",
     "price": 0,
     "to_hit": -1,
-    "rigid": false,
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "resealable": false,
+        "max_contains_volume": "6 L",
+        "max_contains_weight": "10 kg",
+        "moves": 400
+      }
+    ],
     "material": "plastic",
     "symbol": ")",
     "color": "light_gray",
-    "contains": "6 L",
     "flags": [ "TRADER_AVOID" ]
   },
   {
     "id": "bag_zipper",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "zipper bag" },
     "looks_like": "bag_plastic",
@@ -137,17 +149,24 @@
     "weight": "2 g",
     "volume": "10 ml",
     "price": 0,
-    "rigid": false,
     "material": "plastic",
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "max_contains_volume": "250 ml",
+        "max_contains_weight": "750 g",
+        "spoil_multiplier": 0.8,
+        "moves": 400
+      }
+    ],
     "symbol": ")",
     "color": "light_gray",
     "contains": "250 ml",
-    "seals": true,
     "flags": [ "TRADER_AVOID" ]
   },
   {
     "id": "bag_body_bag",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "body bag" },
     "looks_like": "bag_canvas",
@@ -156,16 +175,23 @@
     "volume": "1 L",
     "price": 0,
     "to_hit": -5,
-    "rigid": false,
     "material": "plastic",
     "symbol": ")",
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "watertight": true,
+        "max_contains_volume": "100 L",
+        "max_contains_weight": "100 kg",
+        "moves": 400
+      }
+    ],
     "color": "dark_gray",
-    "contains": "100 L",
     "flags": [ "TRADER_AVOID" ]
   },
   {
     "id": "bag_iv",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "IV bag" },
     "description": "A small, sealed plastic bag for liquids used in intravenous therapy.",
@@ -178,14 +204,20 @@
     "material": "plastic",
     "symbol": ")",
     "color": "light_gray",
-    "contains": "500 ml",
-    "seals": true,
-    "watertight": true,
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "watertight": true,
+        "max_contains_volume": "500 ml",
+        "max_contains_weight": "3 kg",
+        "moves": 400
+      }
+    ],
     "flags": [ "TRADER_AVOID" ]
   },
   {
     "id": "bottle_glass",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "glass bottle" },
     "description": "A resealable glass bottle, holds 750 ml of liquid.",
@@ -197,9 +229,16 @@
     "material": "glass",
     "symbol": ")",
     "color": "cyan",
-    "contains": "750 ml",
-    "seals": true,
-    "watertight": true,
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "watertight": true,
+        "rigid": true,
+        "max_contains_volume": "750 ml",
+        "max_contains_weight": "3 kg",
+        "moves": 400
+      }
+    ],
     "qualities": [ [ "BOIL", 1 ] ]
   },
   {
@@ -209,36 +248,50 @@
     "name": { "str": "plastic bottle" },
     "description": "A resealable plastic bottle, holds 500 ml of liquid.",
     "weight": "13 g",
-    "volume": "500 ml",
+    "volume": "502 ml",
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "watertight": true,
+        "rigid": true,
+        "max_contains_volume": "500 ml",
+        "max_contains_weight": "1 kg",
+        "moves": 400
+      }
+    ],
     "price": 0,
     "to_hit": 1,
     "material": "plastic",
     "symbol": ")",
-    "color": "light_cyan",
-    "contains": "500 ml",
-    "seals": true,
-    "watertight": true
+    "color": "light_cyan"
   },
   {
     "id": "bottle_plastic_small",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "small plastic bottle" },
     "description": "A resealable plastic bottle, holds 250 ml of liquid.",
     "weight": "7 g",
-    "volume": "250 ml",
+    "volume": "251 ml",
+    "pocket_data": [
+      {
+        "pocket_type": "CONTAINER",
+        "watertight": true,
+        "rigid": true,
+        "max_contains_volume": "250 ml",
+        "max_contains_weight": "1 kg",
+        "moves": 400
+      }
+    ],
     "price": 0,
     "to_hit": 1,
     "material": "plastic",
     "symbol": ")",
-    "color": "white",
-    "contains": "250 ml",
-    "seals": true,
-    "watertight": true
+    "color": "white"
   },
   {
     "id": "bottle_twoliter",
-    "type": "CONTAINER",
+    "type": "GENERIC",
     "category": "container",
     "name": { "str": "large plastic bottle" },
     "description": "It's a two-liter plastic bottle that can hold a lot of soda, or, nowadays, boiled water.",
@@ -258,10 +311,7 @@
         "max_contains_weight": "3 kg",
         "moves": 400
       }
-    ],
-    "contains": "2 L",
-    "seals": true,
-    "watertight": true
+    ]
   },
   {
     "id": "bowl_clay",
