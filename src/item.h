@@ -667,10 +667,6 @@ class item : public visitable<item>
         int get_remaining_capacity_for_liquid( const item &liquid, const Character &p,
                                                std::string *err = nullptr ) const;
         /**
-         * It returns the total capacity (volume) of the container for liquids.
-         */
-        units::volume get_container_capacity() const;
-        /**
          * It returns the maximum volume of any contents, including liquids,
          * ammo, magazines, weapons, etc.
          */

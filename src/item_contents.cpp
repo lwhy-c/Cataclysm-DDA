@@ -308,6 +308,16 @@ const item &item_contents::first_ammo() const
     return null_item_reference();
 }
 
+bool item_contents::will_spill() const
+{
+    for( const item_pocket &pocket : contents ) {
+        if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) && pocket.will_spill() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool item_contents::spill_open_pockets( Character &guy )
 {
     for( item_pocket &pocket : contents ) {

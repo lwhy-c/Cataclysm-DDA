@@ -208,7 +208,7 @@ itype_id vehicle_part::ammo_current() const
 int vehicle_part::ammo_capacity() const
 {
     if( is_tank() ) {
-        return item::find_type( ammo_current() )->charges_per_volume( base.get_container_capacity() );
+        return item::find_type( ammo_current() )->charges_per_volume( base.get_total_capacity() );
     }
 
     if( is_fuel_store( false ) || is_turret() ) {
@@ -240,7 +240,9 @@ int vehicle_part::ammo_set( const itype_id &ammo, int qty )
         base.contents.clear_items();
         const auto stack = units::legacy_volume_factor / std::max( liquid->stack_size, 1 );
         const int limit = units::from_milliliter( ammo_capacity() ) / stack;
-        base.put_in( item( ammo, calendar::turn, qty > 0 ? std::min( qty, limit ) : limit ) );
+        // assuming "ammo" isn't really going into a magazine as this is a vehicle part
+        base.put_in( item( ammo, calendar::turn, qty > 0 ? std::min( qty, limit ) : limit ),
+                     item_pocket::pocket_type::CONTAINER );
         return qty;
     }
 

@@ -359,11 +359,6 @@ static VisitResponse visit_internal( const std::function<VisitResponse( item *, 
             return VisitResponse::ABORT;
 
         case VisitResponse::NEXT:
-            if( node->is_gun() || node->is_magazine() ) {
-                // Content of guns and magazines are accessible only via their specific accessors
-                return VisitResponse::NEXT;
-            }
-
             if( node->contents.visit_contents( func, node ) == VisitResponse::ABORT ) {
                 return VisitResponse::ABORT;
             }
@@ -381,7 +376,25 @@ VisitResponse item_contents::visit_contents( const std::function<VisitResponse( 
         &func, item *parent )
 {
     for( item_pocket &pocket : contents ) {
+        if( !pocket.is_type( item_pocket::pocket_type::CONTAINER ) ) {
+            // anything that is not CONTAINER is accessible only via its specific accessor
+            return VisitResponse::NEXT;
+        }
         switch( pocket.visit_contents( func, parent ) ) {
+            case VisitResponse::ABORT:
+                return VisitResponse::ABORT;
+            default:
+                break;
+        }
+    }
+    return VisitResponse::NEXT;
+}
+
+VisitResponse item_pocket::visit_contents( const std::function<VisitResponse( item *, item * )>
+        &func, item *parent )
+{
+    for( item &e : contents ) {
+        switch( visit_internal( func, &e, parent ) ) {
             case VisitResponse::ABORT:
                 return VisitResponse::ABORT;
             default:

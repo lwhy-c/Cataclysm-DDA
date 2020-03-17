@@ -267,7 +267,7 @@ void Item_modifier::modify( item &new_item ) const
 
     if( max_capacity == -1 && !cont.is_null() && ( new_item.made_of( LIQUID ) ||
             ( !new_item.is_tool() && !new_item.is_gun() && !new_item.is_magazine() ) ) ) {
-        max_capacity = new_item.charges_per_volume( cont.get_container_capacity() );
+        max_capacity = new_item.charges_per_volume( cont.get_total_capacity() );
     }
 
     const bool charges_not_set = charges.first == -1 && charges.second == -1;

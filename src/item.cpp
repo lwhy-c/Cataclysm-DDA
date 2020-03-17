@@ -4006,7 +4006,7 @@ std::string item::display_name( unsigned int quantity ) const
     if( contents.num_item_stacks() == 1 ) {
         item front_item( *contents.all_items_top( item_pocket::pocket_type::CONTAINER ).front() );
         amount = front_item.charges;
-        max_amount = front_item.charges_per_volume( get_container_capacity() );
+        max_amount = front_item.charges_per_volume( get_total_capacity() );
     } else if( is_book() && get_chapters() > 0 ) {
         // a book which has remaining unread chapters
         amount = get_remaining_chapters( g->u );
@@ -5917,7 +5917,7 @@ bool item::is_craft() const
 
 bool item::is_funnel_container( units::volume &bigger_than ) const
 {
-    if( get_container_capacity() <= bigger_than ) {
+    if( get_total_capacity() <= bigger_than ) {
         return false; // skip contents check, performance
     }
     return contents.is_funnel_container( bigger_than );
@@ -7902,6 +7902,11 @@ bool item::can_holster( const item &obj, bool ) const
     const holster_actor *ptr = dynamic_cast<const holster_actor *>
                                ( type->get_use( "holster" )->get_actor_ptr() );
     return ptr->can_holster( *this, obj );
+}
+
+bool item::will_spill() const
+{
+    return contents.will_spill();
 }
 
 std::string item::components_to_string() const

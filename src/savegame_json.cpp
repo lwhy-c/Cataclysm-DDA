@@ -2296,7 +2296,18 @@ void item::deserialize( JsonIn &jsin )
     if( data.has_array( "contents" ) ) {
         std::list<item> items;
         data.read( "contents", items );
-        contents = item_contents( items );
+        const bool corpse{ is_corpse() };
+        for( const item &it : items ) {
+            if( corpse ) {
+                contents.insert_item( it, item_pocket::pocket_type::CORPSE );
+            } else if( it.is_ammo() || it.is_magazine() ) {
+                contents.insert_item( it, item_pocket::pocket_type::MAGAZINE );
+            } else if( it.is_gunmod() || it.is_toolmod() ) {
+                contents.insert_item( it, item_pocket::pocket_type::MOD );
+            } else {
+                contents.insert_item( it, item_pocket::pocket_type::CONTAINER );
+            }
+        }
     } else {
         data.read( "contents", contents );
     }

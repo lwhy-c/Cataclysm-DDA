@@ -827,7 +827,7 @@ void item_pocket::remove_items_if( const std::function<bool( item & )> &filter )
 void item_pocket::has_rotten_away( const tripoint &pnt )
 {
     for( auto it = contents.begin(); it != contents.end(); ) {
-        if( g->m.has_rotten_away( *it, pnt ) ) {
+        if( it->has_rotten_away() ) {
             it = contents.erase( it );
         } else {
             ++it;

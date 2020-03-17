@@ -28,8 +28,6 @@ class item_contents
 {
     public:
         item_contents() = default;
-        // used for migration only
-        item_contents( const std::list<item> &loaded );
         // used for loading itype
         item_contents( const std::vector<pocket_data> &pockets ) {
             for( const pocket_data &data : pockets ) {
@@ -136,6 +134,8 @@ class item_contents
         const item &first_ammo() const;
         // spills all liquid from the container. removing liquid from a magazine requires unload logic.
         void handle_liquid_or_spill( Character &guy );
+        // returns true if any of the pockets will spill if placed into a pocket
+        bool will_spill() const;
         bool spill_open_pockets( Character &guy );
         void casings_handle( const std::function<bool( item & )> &func );
 
