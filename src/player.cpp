@@ -3018,13 +3018,8 @@ bool player::list_ammo( const item &base, std::vector<item::reload_option> &ammo
     int ammo_search_range = is_mounted() ? -1 : 1;
     for( const item *e : opts ) {
         for( item_location &ammo : find_ammo( *e, empty, ammo_search_range ) ) {
-            // don't try to unload frozen liquids
-            if( ammo->is_frozen_liquid() ) {
-                continue;
-            }
-            itype_id id = ( ammo->is_ammo_container() || ammo->is_container() )
-                          ? ammo->contents.legacy_front().typeId()
-                          : ammo->typeId();
+
+            itype_id id = ammo->typeId();
             if( e->can_reload_with( id ) ) {
                 // Speedloaders require an empty target.
                 if( !ammo->has_flag( "SPEEDLOADER" ) || e->ammo_remaining() < 1 ) {

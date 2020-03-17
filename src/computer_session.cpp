@@ -336,7 +336,7 @@ void computer_session::action_sample()
                     continue;
                 }
                 capa = std::min( sewage.charges, capa );
-                if( elem.can_contain( sewage) ) {
+                if( elem.can_contain( sewage ) ) {
                     elem.put_in( sewage, item_pocket::pocket_type::CONTAINER );
                 }
                 found_item = true;
@@ -688,7 +688,7 @@ void computer_session::action_download_software()
         item software( miss->get_item_id(), 0 );
         software.mission_id = comp.mission_id;
         usb->contents.clear_items();
-        usb->put_in( software );
+        usb->put_in( software, item_pocket::pocket_type::SOFTWARE );
         print_line( _( "Software downloaded." ) );
     } else {
         print_error( _( "USB drive required!" ) );
@@ -726,7 +726,7 @@ void computer_session::action_blood_anal()
                         if( item *const usb = pick_usb() ) {
                             item software( "software_blood_data", 0 );
                             usb->contents.clear_items();
-                            usb->put_in( software );
+                            usb->put_in( software, item_pocket::pocket_type::SOFTWARE );
                             print_line( _( "Software downloaded." ) );
                         } else {
                             print_error( _( "USB drive required!" ) );

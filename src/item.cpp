@@ -5625,8 +5625,10 @@ bool item::is_brewable() const
 
 bool item::is_food_container() const
 {
-    return has_item_with( []( const item &food ) { return food.is_food(); } ) ||
-           ( is_craft() && craft_data_->making->create_result().is_food_container() );
+    return has_item_with( []( const item & food ) {
+        return food.is_food();
+    } ) ||
+    ( is_craft() && craft_data_->making->create_result().is_food_container() );
 }
 
 bool item::has_temperature() const

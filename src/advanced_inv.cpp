@@ -984,7 +984,7 @@ bool advanced_inventory::move_all_items( bool nested_call )
             if( spane.is_filtered( *it ) ) {
                 continue;
             }
-            if( filter_buckets && it->is_bucket_nonempty() ) {
+            if( filter_buckets && it->will_spill() && !it->contents.empty() ) {
                 filtered_any_bucket = true;
                 continue;
             }
@@ -1620,14 +1620,14 @@ bool advanced_inventory::move_content( item &src_container, item &dest_container
     if( !err.empty() ) {
         popup( err );
         return false;
-    }
+    }/*
     if( src_container.is_non_resealable_container() ) {
         if( src_contents.charges > amount ) {
             popup( _( "You can't partially unload liquids from unsealable container." ) );
             return false;
         }
         src_container.on_contents_changed();
-    }
+    }*/
     dest_container.fill_with( src_contents, amount );
 
     uistate.adv_inv_container_content_type = dest_container.contents.legacy_front().typeId();

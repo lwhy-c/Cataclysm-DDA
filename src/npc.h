@@ -934,7 +934,7 @@ class npc : public player
             return false;
         }
         /**
-         * Is the item safe or does the NPC trust you enough? 
+         * Is the item safe or does the NPC trust you enough?
          * Is not recursive, only checks the item that is the parameter.
          * to check contents, call this on the items inside the item.
          */

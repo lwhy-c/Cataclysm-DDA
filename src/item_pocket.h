@@ -33,6 +33,7 @@ class item_pocket
             MAGAZINE,
             MOD, // the gunmods or toolmods
             CORPSE, // the "corpse" pocket - bionics embedded in a corpse
+            SOFTWARE, // software put into usb or some such
             LAST
         };
         enum class contain_code {

@@ -84,7 +84,7 @@ bool item_contents::item_has_uses_recursive() const
             return true;
         }
     }
-    
+
     return false;
 }
 

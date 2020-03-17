@@ -337,7 +337,8 @@ void Item_modifier::modify( item &new_item ) const
                           !new_item.magazine_current();
 
         if( spawn_mag ) {
-            new_item.put_in( item( new_item.magazine_default(), new_item.birthday() ), item_pocket::pocket_type::MAGAZINE );
+            new_item.put_in( item( new_item.magazine_default(), new_item.birthday() ),
+                             item_pocket::pocket_type::MAGAZINE );
         }
 
         if( spawn_ammo ) {

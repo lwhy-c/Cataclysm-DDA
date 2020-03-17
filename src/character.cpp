@@ -1891,7 +1891,7 @@ void find_ammo_helper( T &src, const item &obj, bool empty, Output out, bool nes
             } );
         } else {
             // Look for containers with any liquid and loose frozen liquids
-            src.visit_items( [&src, &nested, &out]( item * node, item *parent ) {
+            src.visit_items( [&src, &nested, &out]( item * node, item * parent ) {
                 if( parent->is_watertight_container() && node->is_frozen_liquid() ) {
                     return VisitResponse::SKIP;
                 }
@@ -1908,7 +1908,7 @@ void find_ammo_helper( T &src, const item &obj, bool empty, Output out, bool nes
         std::set<ammotype> ammo = obj.ammo_types();
         const auto mags = obj.magazine_compatible();
 
-        src.visit_items( [&src, &nested, &out, &mags, ammo]( item * node, item *parent ) {
+        src.visit_items( [&src, &nested, &out, &mags, ammo]( item * node, item * parent ) {
             if( node->is_gun() || node->is_tool() ) {
                 // guns/tools never contain usable ammo so most efficient to skip them now
                 return VisitResponse::SKIP;

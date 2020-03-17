@@ -27,7 +27,7 @@ bool item_contents::empty() const
 bool item_contents::full( bool allow_bucket ) const
 {
     for( const item_pocket &pocket : contents ) {
-        if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) 
+        if( pocket.is_type( item_pocket::pocket_type::CONTAINER )
             && !pocket.full( allow_bucket ) ) {
             return false;
         }
@@ -101,14 +101,24 @@ ret_val<bool> item_contents::insert_item( const item &it, item_pocket::pocket_ty
 {
     ret_val<item_pocket *> pocket = find_pocket_for( it, pk_type );
     if( !pocket.success() ) {
-        if( pk_type == item_pocket::pocket_type::CORPSE ) {
-            static pocket_data flesh_data;
-            flesh_data.type = item_pocket::pocket_type::CORPSE;
+        /**
+         * these are special pocket types that always exist if needed
+         */
+        static const std::vector<item_pocket::pocket_type> special_pocket_types{
+            item_pocket::pocket_type::CORPSE,
+            item_pocket::pocket_type::SOFTWARE,
+            item_pocket::pocket_type::MOD
+        };
+        for( const item_pocket::pocket_type special_type : special_pocket_types ) {
+            if( pk_type == special_type ) {
+                pocket_data special_data;
+                special_data.type = special_type;
 
-            contents.push_back( item_pocket( &flesh_data ) );
-            return insert_item( it, pk_type );
-        } else {
-            return ret_val<bool>::make_failure( pocket.str() );
+                contents.push_back( item_pocket( &special_data ) );
+                return insert_item( it, pk_type );
+            } else {
+                return ret_val<bool>::make_failure( pocket.str() );
+            }
         }
     }
     ret_val<item_pocket::contain_code> pocket_contain_code = pocket.value()->insert_item( it );
@@ -480,6 +490,42 @@ std::list<const item *> item_contents::all_items_ptr() const
         all_items_internal.insert( all_items_internal.end(), inserted.begin(), inserted.end() );
     }
     return all_items_internal;
+}
+
+item &item_contents::legacy_front()
+{
+    if( empty() ) {
+        return null_item_reference();
+    } else {
+        return *all_items_top( item_pocket::pocket_type::CONTAINER ).front();
+    }
+}
+
+const item &item_contents::legacy_front() const
+{
+    if( empty() ) {
+        return null_item_reference();
+    } else {
+        return *all_items_top( item_pocket::pocket_type::CONTAINER ).front();
+    }
+}
+
+item &item_contents::legacy_back()
+{
+    if( empty() ) {
+        return null_item_reference();
+    } else {
+        return *all_items_top( item_pocket::pocket_type::CONTAINER ).back();
+    }
+}
+
+const item &item_contents::legacy_back() const
+{
+    if( empty() ) {
+        return null_item_reference();
+    } else {
+        return *all_items_top( item_pocket::pocket_type::CONTAINER ).back();
+    }
 }
 
 std::vector<item *> item_contents::gunmods()

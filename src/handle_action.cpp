@@ -1301,7 +1301,9 @@ static void fire()
 
         for( auto &w : u.worn ) {
 
-            std::vector<item *> guns = w.items_with( []( const item &it ) { return it.is_gun(); } );
+            std::vector<item *> guns = w.items_with( []( const item & it ) {
+                return it.is_gun();
+            } );
 
             if( !guns.empty() && w.type->can_use( "holster" ) && !w.has_flag( flag_NO_QUICKDRAW ) ) {
                 //~ draw (first) gun contained in holster

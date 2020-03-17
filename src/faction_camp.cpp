@@ -3700,7 +3700,9 @@ bool basecamp::distribute_food()
         for( item &i : initial_items ) {
             std::vector<item *> comest_list{ &i };
             if( i.is_food_container() ) {
-                std::vector<item *> comest = i.items_with( []( const item &it ) {return it.is_comestible(); } );
+                std::vector<item *> comest = i.items_with( []( const item & it ) {
+                    return it.is_comestible();
+                } );
                 i.contents.clear_items();
                 //NPCs are lazy bastards who leave empties all around the camp fire
                 tripoint litter_spread = p_litter;
@@ -3711,24 +3713,20 @@ bool basecamp::distribute_food()
                 comest_list = comest;
             }
             for( item *comest : comest_list ) {
-                if( comest->is_comestible() && (comest->rotten() || comest->get_comestible_fun() < -6) ) {
+                if( comest->is_comestible() && ( comest->rotten() || comest->get_comestible_fun() < -6 ) ) {
                     keep_me.push_back( *comest );
-                }
-                else if( comest->is_food() ) {
+                } else if( comest->is_food() ) {
                     double rot_multip;
                     int rots_in = to_days<int>( time_duration::from_turns( comest->spoilage_sort_order() ) );
                     if( rots_in >= 5 ) {
                         rot_multip = 1.00;
-                    }
-                    else if( rots_in >= 2 ) {
+                    } else if( rots_in >= 2 ) {
                         rot_multip = slow_rot;
-                    }
-                    else {
+                    } else {
                         rot_multip = quick_rot;
                     }
                     total += comest->get_comestible()->default_nutrition.kcal * rot_multip * i.count();
-                }
-                else {
+                } else {
                     keep_me.push_back( *comest );
                 }
             }

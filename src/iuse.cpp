@@ -1923,7 +1923,9 @@ int iuse::water_purifier( player *p, item *it, bool, const tripoint & )
         return 0;
     }
     item_location obj = g->inv_map_splice( []( const item & e ) {
-        return !e.contents.empty() && e.has_item_with( []( const item &it ) { return it.typeId() == "water"; } );
+        return !e.contents.empty() && e.has_item_with( []( const item & it ) {
+            return it.typeId() == "water";
+        } );
     }, _( "Purify what?" ), 1, _( "You don't have water to purify." ) );
 
     if( !obj ) {
@@ -1931,7 +1933,9 @@ int iuse::water_purifier( player *p, item *it, bool, const tripoint & )
         return 0;
     }
 
-    const std::vector<item *> liquids = obj->items_with( []( const item &it ) { return it.typeId() == "water"; } );
+    const std::vector<item *> liquids = obj->items_with( []( const item & it ) {
+        return it.typeId() == "water";
+    } );
     int charges_of_water = 0;
     for( const item *water : liquids ) {
         charges_of_water += water->charges;

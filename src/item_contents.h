@@ -68,6 +68,20 @@ class item_contents
         // returns a list of pointers to all items inside recursively
         // includes mods.  used for item_location::unpack()
         std::list<const item *> all_items_ptr() const;
+        /**
+         * gets the last item in CONTAINER type pockets.
+         * pays no attention to amount of pockets or type
+         * only exists to aid transition to nested containers
+         */
+        item &legacy_back();
+        const item &legacy_back() const;
+        /**
+         * gets the first item in CONTAINER type pockets.
+         * pays no attention to amount of pockets or type
+         * only exists to aid transition to nested containers
+         */
+        item &legacy_front();
+        const item &legacy_front() const;
 
         /** gets all gunmods in the item */
         std::vector<item *> gunmods();
