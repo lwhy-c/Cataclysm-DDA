@@ -278,11 +278,6 @@ class armor_inventory_preset: public inventory_selector_preset
             }, _( "ENCUMBRANCE" ) );
 
             append_cell( [ this ]( const item_location & loc ) {
-                return loc->get_storage() > 0_ml ? string_format( "<%s>%s</color>", color,
-                        format_volume( loc->get_storage() ) ) : std::string();
-            }, _( "STORAGE" ) );
-
-            append_cell( [ this ]( const item_location & loc ) {
                 return string_format( "<%s>%d%%</color>", color, loc->get_coverage() );
             }, _( "COVERAGE" ) );
 
@@ -590,8 +585,7 @@ class comestible_inventory_preset : public inventory_selector_preset
         }
 
         std::string get_denial( const item_location &loc ) const override {
-            const item &med = !( *loc ).is_container_empty() && ( *loc ).get_contained().is_medication() &&
-                              ( *loc ).get_contained().type->has_use() ? ( *loc ).get_contained() : *loc;
+            const item &med = *loc;
 
             if( loc->made_of_from_type( LIQUID ) && !g->m.has_flag( flag_LIQUIDCONT, loc.position() ) ) {
                 return _( "Can't drink spilt liquids" );
@@ -628,9 +622,7 @@ class comestible_inventory_preset : public inventory_selector_preset
 
     protected:
         int get_order( const item_location &loc, const time_duration &time ) const {
-            if( time > 0_turns && !( loc->type->container && loc->type->container->preserves ) ) {
-                return 0;
-            } else if( get_consumable_item( loc ).rotten() ) {
+            if( get_consumable_item( loc ).rotten() ) {
                 if( p.has_trait( trait_SAPROPHAGE ) || p.has_trait( trait_SAPROVORE ) ) {
                     return 1;
                 } else {

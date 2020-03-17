@@ -871,6 +871,14 @@ bool item_pocket::empty() const
     return contents.empty();
 }
 
+bool item_pocket::full( bool allow_bucket ) const
+{
+    if( !allow_bucket && will_spill() ) {
+        return true;
+    }
+    return remaining_volume() == 0_ml;
+}
+
 bool item_pocket::rigid() const
 {
     return data->rigid;

@@ -642,6 +642,11 @@ class item : public visitable<item>
         /** Whether this item has no contents at all. */
         bool is_container_empty() const;
         /**
+         * Whether this item has no more free capacity for its current content.
+         * @param allow_bucket Allow filling non-sealable containers
+         */
+        bool is_container_full( bool allow_bucket = false ) const;
+        /**
          * Fill item with liquid up to its capacity. This works for guns and tools that accept
          * liquid ammo.
          * @param liquid Liquid to fill the container with.
@@ -1087,6 +1092,7 @@ class item : public visitable<item>
         bool is_null() const; // True if type is NULL, or points to the null item (id == 0)
         bool is_comestible() const;
         bool is_food() const;                // Ignoring the ability to eat batteries, etc.
+        bool is_food_container() const;      // Ignoring the ability to eat batteries, etc.
         bool is_ammo_container() const; // does this item contain ammo? (excludes magazines)
         bool is_medication() const;            // Is it a medication that only pretends to be food?
         bool is_bionic() const;

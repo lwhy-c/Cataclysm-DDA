@@ -207,7 +207,7 @@ int iuse_transform::use( player &p, item &it, bool t, const tripoint &pos ) cons
         it.convert( container );
         obj_it = item( target, calendar::turn, std::max( ammo_qty, 1 ) );
         obj = &obj_it;
-        it.put_in( *obj );
+        it.put_in( *obj, item_pocket::pocket_type::CONTAINER );
     }
     if( p.is_worn( *obj ) ) {
         p.reset_encumbrance();
@@ -3862,7 +3862,7 @@ int saw_barrel_actor::use( player &p, item &it, bool t, const tripoint & ) const
 
     item &obj = *loc.obtain( p );
     p.add_msg_if_player( _( "You saw down the barrel of your %s." ), obj.tname() );
-    obj.put_in( item( "barrel_small", calendar::turn ) );
+    obj.put_in( item( "barrel_small", calendar::turn ), item_pocket::pocket_type::MOD );
 
     return 0;
 }
@@ -4440,11 +4440,6 @@ int sew_advanced_actor::use( player &p, item &it, bool, const tripoint & ) const
         desc += format_desc_string( _( "Warmth" ), mod.get_warmth(), temp_item.get_warmth(), true );
         desc += format_desc_string( _( "Encumbrance" ), mod.get_encumber( p ), temp_item.get_encumber( p ),
                                     false );
-        auto before = mod.get_storage();
-        auto after = temp_item.get_storage();
-        desc += colorize( string_format( "%s: %s %s->%s %s\n", _( "Storage" ),
-                                         format_volume( before ), volume_units_abbr(), format_volume( after ),
-                                         volume_units_abbr() ), get_volume_compare_color( before, after, true ) );
 
         tmenu.addentry_desc( index++, enab, MENU_AUTOASSIGN, prompt, desc );
     }

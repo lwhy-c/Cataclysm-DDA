@@ -336,11 +336,8 @@ void computer_session::action_sample()
                     continue;
                 }
                 capa = std::min( sewage.charges, capa );
-                if( elem.contents.empty() ) {
-                    elem.put_in( sewage );
-                    elem.contents.legacy_front().charges = capa;
-                } else {
-                    elem.contents.legacy_front().charges += capa;
+                if( elem.can_contain( sewage) ) {
+                    elem.put_in( sewage, item_pocket::pocket_type::CONTAINER );
                 }
                 found_item = true;
                 break;

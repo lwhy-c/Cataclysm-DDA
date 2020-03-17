@@ -278,7 +278,7 @@ std::pair<nutrients, nutrients> Character::compute_nutrient_range(
 
         item result_it = rec->create_result();
         if( result_it.contents.num_item_stacks() == 1 ) {
-            const item alt_result = result_it.contents.front();
+            const item alt_result = result_it.contents.legacy_front();
             if( alt_result.typeId() == comest_it.typeId() ) {
                 result_it = alt_result;
             }
@@ -1489,4 +1489,29 @@ bool Character::can_consume( const item &it ) const
         // Checking NO_RELOAD to prevent consumption of `battery` when contained in `battery_car` (#20012)
         return !consumable.has_flag( flag_NO_RELOAD ) && can_consume_as_is( consumable );
     } );
+}
+
+item &Character::get_consumable_from( item &it ) const
+{
+    if( can_consume_as_is( it ) ) {
+        return it;
+    }
+
+    item *ret = nullptr;
+    it.visit_items( [&]( item *it ) {
+        if( can_consume_as_is( *it ) ) {
+            ret = it;
+            return VisitResponse::ABORT;
+        }
+        return VisitResponse::NEXT;
+    } );
+
+    if( ret != nullptr ) {
+        return *ret;
+    }
+
+    static item null_comestible;
+    // Since it's not const.
+    null_comestible = item();
+    return null_comestible;
 }

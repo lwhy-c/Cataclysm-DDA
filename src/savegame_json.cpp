@@ -2227,11 +2227,6 @@ void item::io( Archive &archive )
         gun_set_mode( gun_mode_id( mode ) );
     }
 
-    // Sealed item migration: items with "unseals_into" set should always have contents
-    if( contents.empty() && is_non_resealable_container() ) {
-        convert( type->container->unseals_into );
-    }
-
     // Books without any chapters don't need to store a remaining-chapters
     // counter, it will always be 0 and it prevents proper stacking.
     if( get_chapters() == 0 ) {

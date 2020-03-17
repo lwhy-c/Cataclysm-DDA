@@ -412,7 +412,7 @@ bool player::check_eligible_containers_for_crafting( const recipe &rec, int batc
 
 static bool is_container_eligible_for_crafting( const item &cont, bool allow_bucket )
 {
-    if( cont.is_watertight_container() || ( allow_bucket && cont.is_bucket() ) ) {
+    if( cont.is_watertight_container() || ( allow_bucket && cont.will_spill() ) ) {
         return !cont.is_container_full( allow_bucket );
     }
 
@@ -1537,7 +1537,7 @@ static void empty_buckets( player &p )
 {
     // First grab (remove) all items that are non-empty buckets and not wielded
     auto buckets = p.remove_items_with( [&p]( const item & it ) {
-        return it.is_bucket_nonempty() && &it != &p.weapon;
+        return it.will_spill() && !it.contents.empty() && &it != &p.weapon;
     }, INT_MAX );
     for( auto &it : buckets ) {
         for( const item *in : it.contents.all_items_top() ) {

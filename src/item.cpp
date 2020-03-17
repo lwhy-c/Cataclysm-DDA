@@ -5623,6 +5623,12 @@ bool item::is_brewable() const
     return !!type->brewable;
 }
 
+bool item::is_food_container() const
+{
+    return has_item_with( []( const item &food ) { return food.is_food(); } ) ||
+           ( is_craft() && craft_data_->making->create_result().is_food_container() );
+}
+
 bool item::has_temperature() const
 {
     return is_food() || is_corpse();
@@ -5841,6 +5847,11 @@ struct fuel_explosion item::get_explosion_data()
 bool item::is_container_empty() const
 {
     return contents.empty();
+}
+
+bool item::is_container_full( bool allow_bucket ) const
+{
+    return contents.full( allow_bucket );
 }
 
 bool item::can_unload_liquid() const

@@ -24,6 +24,17 @@ bool item_contents::empty() const
     return true;
 }
 
+bool item_contents::full( bool allow_bucket ) const
+{
+    for( const item_pocket &pocket : contents ) {
+        if( pocket.is_type( item_pocket::pocket_type::CONTAINER ) 
+            && !pocket.full( allow_bucket ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 size_t item_contents::size() const
 {
     return contents.size();
@@ -457,6 +468,16 @@ std::list<const item *> item_contents::all_items_ptr( item_pocket::pocket_type p
             all_items_internal.insert( all_items_internal.end(), contained_items.begin(),
                                        contained_items.end() );
         }
+    }
+    return all_items_internal;
+}
+
+std::list<const item *> item_contents::all_items_ptr() const
+{
+    std::list<const item *> all_items_internal;
+    for( int i = item_pocket::pocket_type::CONTAINER; i < item_pocket::pocket_type::LAST; i++ ) {
+        std::list<const item *> inserted{ all_items_ptr( static_cast<item_pocket::pocket_type>( i ) ) };
+        all_items_internal.insert( all_items_internal.end(), inserted.begin(), inserted.end() );
     }
     return all_items_internal;
 }

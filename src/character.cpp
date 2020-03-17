@@ -1868,30 +1868,35 @@ void find_ammo_helper( T &src, const item &obj, bool empty, Output out, bool nes
             itype_id contents_id = obj.contents.legacy_front().typeId();
 
             // Look for containers with the same type of liquid as that already in our container
-            src.visit_items( [&src, &nested, &out, &contents_id, &obj]( item * node ) {
-                if( node == &obj || ( node->is_watertight_container() && node->contents_made_of( SOLID ) ) ) {
-                    // This stops containers and magazines counting *themselves* as ammo sources and prevents reloading with items frozen in watertight containers.
+            src.visit_items( [&src, &nested, &out, &contents_id, &obj]( item * node, item * parent ) {
+                if( node == &obj ) {
+                    // This stops containers and magazines counting *themselves* as ammo sources
+                    return VisitResponse::SKIP;
+                }
+                // prevents reloading with items frozen in watertight containers.
+                if( node->is_frozen_liquid() && parent->is_watertight_container() ) {
                     return VisitResponse::SKIP;
                 }
 
-                if( node->is_watertight_container() && node->contents_made_of( SOLID ) ) {
-                    return VisitResponse::SKIP;
+                if( node->is_container() && !node->is_container_empty() ) {
+                    return VisitResponse::NEXT;
                 }
 
-                if( node->is_container() && !node->is_container_empty() &&
-                    node->contents.legacy_front().typeId() == contents_id ) {
+                if( node->typeId() == contents_id ) {
                     out = item_location( src, node );
+                    return VisitResponse::ABORT;
                 }
+
                 return nested ? VisitResponse::NEXT : VisitResponse::SKIP;
             } );
         } else {
             // Look for containers with any liquid and loose frozen liquids
-            src.visit_items( [&src, &nested, &out]( item * node ) {
-                if( node->is_watertight_container() && node->contents_made_of( SOLID ) ) {
+            src.visit_items( [&src, &nested, &out]( item * node, item *parent ) {
+                if( parent->is_watertight_container() && node->is_frozen_liquid() ) {
                     return VisitResponse::SKIP;
                 }
 
-                if( ( node->is_container() && node->contents_made_of( LIQUID ) ) || node->is_frozen_liquid() ) {
+                if( parent->is_container() && node->made_of( LIQUID ) || node->is_frozen_liquid() ) {
                     out = item_location( src, node );
                 }
                 return nested ? VisitResponse::NEXT : VisitResponse::SKIP;
@@ -1903,7 +1908,7 @@ void find_ammo_helper( T &src, const item &obj, bool empty, Output out, bool nes
         std::set<ammotype> ammo = obj.ammo_types();
         const auto mags = obj.magazine_compatible();
 
-        src.visit_items( [&src, &nested, &out, &mags, ammo]( item * node ) {
+        src.visit_items( [&src, &nested, &out, &mags, ammo]( item * node, item *parent ) {
             if( node->is_gun() || node->is_tool() ) {
                 // guns/tools never contain usable ammo so most efficient to skip them now
                 return VisitResponse::SKIP;
@@ -1912,10 +1917,9 @@ void find_ammo_helper( T &src, const item &obj, bool empty, Output out, bool nes
                 // some liquids are ammo but we can't reload with them unless within a container or frozen
                 return VisitResponse::SKIP;
             }
-            if( node->is_ammo_container() && !node->contents.empty() &&
-                !node->contents_made_of( SOLID ) ) {
+            if( parent->is_ammo_container() && !node->made_of( SOLID ) ) {
                 for( const ammotype &at : ammo ) {
-                    if( node->contents.legacy_front().ammo_type() == at ) {
+                    if( node->ammo_type() == at ) {
                         out = item_location( src, node );
                     }
                 }

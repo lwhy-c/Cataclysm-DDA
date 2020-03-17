@@ -8389,7 +8389,7 @@ void game::reload( item_location &loc, bool prompt, bool empty )
     }
 
     // for holsters and ammo pouches try to reload any contained item
-    if( it->type->can_use( "holster" ) && !it->contents.empty() ) {
+    if( it->type->can_use( "holster" ) && it->contents.num_item_stacks() == 1 ) {
         it = &it->contents.legacy_front();
     }
 
@@ -8543,8 +8543,8 @@ void game::wield( item_location &loc )
     // Need to do this here because holster_actor::use() checks if/where the item is worn
     item &target = *loc.get_item();
     if( target.get_use( "holster" ) && !target.contents.empty() ) {
-        //~ %1$s: weapon name, %2$s: holster name
-        if( query_yn( pgettext( "holster", "Draw %1$s from %2$s?" ), target.get_contained().tname(),
+        //~ %1$s: holster name
+        if( query_yn( pgettext( "holster", "Draw from %1$s?" ),
                       target.tname() ) ) {
             u.invoke_item( &target );
             return;
@@ -8596,8 +8596,6 @@ void game::wield( item_location &loc )
                 }
                 break;
             }
-            case item_location::type::container:
-                break;
             case item_location::type::invalid:
                 debugmsg( "Failed wield from invalid item location" );
                 break;

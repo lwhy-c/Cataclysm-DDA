@@ -1756,6 +1756,12 @@ class Character : public Creature, public visitable<Character>
         /** Check whether character can consume this very item */
         bool can_consume_as_is( const item &it ) const;
         bool can_consume_for_bionic( const item &it ) const;
+        /**
+         * Returns a reference to the item itself (if it's consumable),
+         * the first of its contents (if it's consumable) or null item otherwise.
+         * WARNING: consumable does not necessarily guarantee the comestible type.
+         */
+        item &get_consumable_from( item &it ) const;
 
         hint_rating rate_action_eat( const item &it ) const;
 

@@ -3698,8 +3698,9 @@ bool basecamp::distribute_food()
         const tripoint p_food_stock = g->m.getlocal( p_food_stock_abs );
         map_stack initial_items = g->m.i_at( p_food_stock );
         for( item &i : initial_items ) {
-            if( i.is_container() && i.get_contained().is_food() ) {
-                auto comest = i.get_contained();
+            std::vector<item *> comest_list{ &i };
+            if( i.is_food_container() ) {
+                std::vector<item *> comest = i.items_with( []( const item &it ) {return it.is_comestible(); } );
                 i.contents.clear_items();
                 //NPCs are lazy bastards who leave empties all around the camp fire
                 tripoint litter_spread = p_litter;
@@ -3707,23 +3708,29 @@ bool basecamp::distribute_food()
                 litter_spread.y += rng( -3, 3 );
                 i.on_contents_changed();
                 g->m.add_item_or_charges( litter_spread, i, false );
-                i = comest;
+                comest_list = comest;
             }
-            if( i.is_comestible() && ( i.rotten() || i.get_comestible_fun() < -6 ) ) {
-                keep_me.push_back( i );
-            } else if( i.is_food() ) {
-                double rot_multip;
-                int rots_in = to_days<int>( time_duration::from_turns( i.spoilage_sort_order() ) );
-                if( rots_in >= 5 ) {
-                    rot_multip = 1.00;
-                } else if( rots_in >= 2 ) {
-                    rot_multip = slow_rot;
-                } else {
-                    rot_multip = quick_rot;
+            for( item *comest : comest_list ) {
+                if( comest->is_comestible() && (comest->rotten() || comest->get_comestible_fun() < -6) ) {
+                    keep_me.push_back( *comest );
                 }
-                total += i.get_comestible()->default_nutrition.kcal * rot_multip * i.count();
-            } else {
-                keep_me.push_back( i );
+                else if( comest->is_food() ) {
+                    double rot_multip;
+                    int rots_in = to_days<int>( time_duration::from_turns( comest->spoilage_sort_order() ) );
+                    if( rots_in >= 5 ) {
+                        rot_multip = 1.00;
+                    }
+                    else if( rots_in >= 2 ) {
+                        rot_multip = slow_rot;
+                    }
+                    else {
+                        rot_multip = quick_rot;
+                    }
+                    total += comest->get_comestible()->default_nutrition.kcal * rot_multip * i.count();
+                }
+                else {
+                    keep_me.push_back( *comest );
+                }
             }
         }
         g->m.i_clear( p_food_stock );

@@ -209,12 +209,6 @@ void Item_factory::finalize_pre( itype &obj )
         }
     }
 
-    // Set max volume for containers to prevent integer overflow
-    if( obj.container && obj.container->contains > 10000_liter ) {
-        debugmsg( obj.id + " storage volume is too large, reducing to 10000 liters" );
-        obj.container->contains = 10000_liter;
-    }
-
     // for ammo not specifying loudness (or an explicit zero) derive value from other properties
     if( obj.ammo ) {
         handle_legacy_ranged( *obj.ammo );
@@ -1295,19 +1289,6 @@ void Item_factory::check_definitions() const
             }
         }
 
-        if( type->container ) {
-            if( type->container->seals && type->container->unseals_into != "null" ) {
-                msg += string_format( "resealable container unseals_into %s\n",
-                                      type->container->unseals_into.c_str() );
-            }
-            if( type->container->contains <= 0_ml ) {
-                msg += string_format( "\"contains\" (%d) must be >0\n", type->container->contains.value() );
-            }
-            if( !has_template( type->container->unseals_into ) ) {
-                msg += string_format( "unseals_into invalid id %s\n", type->container->unseals_into.c_str() );
-            }
-        }
-
         for( const auto &elem : type->use_methods ) {
             const iuse_actor *actor = elem.second.get_actor_ptr();
 
@@ -1942,15 +1923,6 @@ void Item_factory::load_comestible( const JsonObject &jo, const std::string &src
     }
 }
 
-void Item_factory::load_container( const JsonObject &jo, const std::string &src )
-{
-    itype def;
-    if( load_definition( jo, src, def ) ) {
-        load_slot( def.container, jo, src );
-        load_basic_info( jo, def, src );
-    }
-}
-
 void Item_factory::load( islot_seed &slot, const JsonObject &jo, const std::string & )
 {
     assign( jo, "grow", slot.grow, false, 1_days );
@@ -1959,15 +1931,6 @@ void Item_factory::load( islot_seed &slot, const JsonObject &jo, const std::stri
     slot.fruit_id = jo.get_string( "fruit" );
     slot.spawn_seeds = jo.get_bool( "seeds", true );
     slot.byproducts = jo.get_string_array( "byproducts" );
-}
-
-void Item_factory::load( islot_container &slot, const JsonObject &jo, const std::string & )
-{
-    assign( jo, "contains", slot.contains );
-    assign( jo, "seals", slot.seals );
-    assign( jo, "watertight", slot.watertight );
-    assign( jo, "preserves", slot.preserves );
-    assign( jo, "unseals_into", slot.unseals_into );
 }
 
 void Item_factory::load( islot_gunmod &slot, const JsonObject &jo, const std::string &src )
@@ -2212,7 +2175,6 @@ void Item_factory::load_basic_info( const JsonObject &jo, itype &def, const std:
     assign( jo, "min_intelligence", def.min_int );
     assign( jo, "min_perception", def.min_per );
     assign( jo, "emits", def.emits );
-    assign( jo, "magazine_well", def.magazine_well );
     assign( jo, "explode_in_fire", def.explode_in_fire );
     assign( jo, "insulation", def.insulation_factor );
     assign( jo, "ascii_picture", def.ascii_picture );
@@ -2369,7 +2331,6 @@ void Item_factory::load_basic_info( const JsonObject &jo, itype &def, const std:
 
     assign( jo, "pocket_data", def.pockets );
 
-    load_slot_optional( def.container, jo, "container_data", src );
     load_slot_optional( def.armor, jo, "armor_data", src );
     load_slot_optional( def.pet_armor, jo, "pet_armor_data", src );
     load_slot_optional( def.book, jo, "book_data", src );
@@ -2452,13 +2413,6 @@ void Item_factory::migrate_item( const itype_id &id, item &obj )
         }
 
         obj.contents.migrate_item( obj, iter->second.contents );
-
-        // check contents of migrated containers do not exceed capacity
-        if( obj.is_container() && !obj.contents.empty() ) {
-            item &child = obj.contents.legacy_back();
-            const int capacity = child.charges_per_volume( obj.get_container_capacity() );
-            child.charges = std::min( child.charges, capacity );
-        }
     }
 }
 

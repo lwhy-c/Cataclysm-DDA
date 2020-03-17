@@ -46,6 +46,8 @@ class item_contents
         ret_val<bool> can_contain( const item &it ) const;
         bool can_contain_liquid( bool held_or_ground ) const;
         bool empty() const;
+        // checks if CONTAINER pockets are all full
+        bool full( bool allow_bucket ) const;
         // number of pockets
         size_t size() const;
 
@@ -63,6 +65,9 @@ class item_contents
         std::list<item *> all_items_ptr( item_pocket::pocket_type pk_type );
         // returns a list of pointers to all items inside recursively
         std::list<const item *> all_items_ptr( item_pocket::pocket_type pk_type ) const;
+        // returns a list of pointers to all items inside recursively
+        // includes mods.  used for item_location::unpack()
+        std::list<const item *> all_items_ptr() const;
 
         /** gets all gunmods in the item */
         std::vector<item *> gunmods();
