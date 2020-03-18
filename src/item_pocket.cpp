@@ -111,6 +111,7 @@ void item_pocket::restack()
         }
         for( auto inner_iter = contents.begin(); inner_iter != contents.end(); ) {
             if( outer_iter == inner_iter || !inner_iter->count_by_charges() ) {
+                ++inner_iter;
                 continue;
             }
             if( outer_iter->stacks_with( *inner_iter, true ) ) {
