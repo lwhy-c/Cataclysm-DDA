@@ -25,6 +25,8 @@ std::string enum_to_string<item_pocket::pocket_type>( item_pocket::pocket_type d
     case item_pocket::pocket_type::CONTAINER: return "CONTAINER";
     case item_pocket::pocket_type::MAGAZINE: return "MAGAZINE";
     case item_pocket::pocket_type::MOD: return "MOD";
+    case item_pocket::pocket_type::CORPSE: return "CORPSE";
+    case item_pocket::pocket_type::SOFTWARE: return "SOFTWARE";
     case item_pocket::pocket_type::LAST: break;
     }
     debugmsg( "Invalid valid_target" );
