@@ -167,7 +167,7 @@ void item_pocket::serialize( JsonOut &json ) const
 {
     if( !contents.empty() ) {
         json.start_object();
-        json.member( "pocket_type", data->type );
+        json.member( "pocket_type", _saved_type );
         json.member( "contents", contents );
         json.end_object();
     }
@@ -2309,7 +2309,10 @@ void item::deserialize( JsonIn &jsin )
             }
         }
     } else {
-        data.read( "contents", contents );
+        item_contents read_contents;
+        data.read( "contents", read_contents );
+        contents = item_contents( type->pockets );
+        contents.combine( read_contents );
     }
 }
 

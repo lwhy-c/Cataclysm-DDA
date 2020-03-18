@@ -170,6 +170,8 @@ class item_contents
 
         void info( std::vector<iteminfo> &info ) const;
 
+        void combine( const item_contents &read_input );
+
         void serialize( JsonOut &json ) const;
         void deserialize( JsonIn &jsin );
     private:
