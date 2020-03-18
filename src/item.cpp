@@ -480,9 +480,11 @@ item &item::ammo_set( const itype_id &ammo, int qty )
             }
             put_in( item( mag ), item_pocket::pocket_type::MAGAZINE );
         }
-        magazine_current()->ammo_set( ammo, qty );
+        item *mag_cur = magazine_current();
+        if( mag_cur != nullptr ) {
+            mag_cur->ammo_set( ammo, qty );
+        }
     }
-
     return *this;
 }
 
@@ -655,17 +657,18 @@ item item::in_container( const itype_id &cont ) const
 {
     if( cont != "null" ) {
         item ret( cont, birthday() );
-        ret.put_in( *this, item_pocket::pocket_type::CONTAINER );
-        if( made_of( LIQUID ) ) {
-            // fill up all the pockets that take liquid to the brim with this item
-            ret.contents.fill_with( *this );
-        }
+        if( ret.has_pockets() ) {
+            ret.put_in( *this, item_pocket::pocket_type::CONTAINER );
+            if( made_of( LIQUID ) ) {
+                // fill up all the pockets that take liquid to the brim with this item
+                ret.contents.fill_with( *this );
+            }
 
-        ret.invlet = invlet;
-        return ret;
-    } else {
-        return *this;
+            ret.invlet = invlet;
+            return ret;
+        }
     }
+    return *this;
 }
 
 int item::charges_per_volume( const units::volume &vol ) const
