@@ -96,7 +96,7 @@ TEST_CASE( "reload_gun_with_swappable_magazine", "[reload],[gun]" )
     item &gun = dummy.i_add( item( "glock_19", 0, item::default_charges_tag{} ) );
     REQUIRE( gun.ammo_types().count( ammo_type->type ) != 0 );
 
-    gun.put_in( mag );
+    gun.put_in( mag, item_pocket::pocket_type::MAGAZINE );
 
     int gun_pos = dummy.inv.position_by_type( "glock_19" );
     REQUIRE( gun_pos != INT_MIN );
