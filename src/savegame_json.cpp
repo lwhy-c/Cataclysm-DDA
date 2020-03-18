@@ -167,7 +167,7 @@ void item_pocket::serialize( JsonOut &json ) const
 {
     if( !contents.empty() ) {
         json.start_object();
-        json.member( "pocket_type", _saved_type );
+        json.member( "pocket_type", data->type );
         json.member( "contents", contents );
         json.end_object();
     }

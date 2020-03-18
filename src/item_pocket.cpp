@@ -651,7 +651,7 @@ ret_val<item_pocket::contain_code> item_pocket::can_contain( const item &it ) co
 
     // ammo restriction overrides item volume and weight data
     if( !data->ammo_restriction.empty() && it.is_ammo()
-        && data->ammo_restriction.count( it.ammo_type() ) ) {
+        && !data->ammo_restriction.count( it.ammo_type() ) ) {
         return ret_val<item_pocket::contain_code>::make_failure(
                    contain_code::ERR_AMMO, _( "item is not the correct ammo type" ) );
     } else if( !data->ammo_restriction.empty() && it.is_ammo() ) {

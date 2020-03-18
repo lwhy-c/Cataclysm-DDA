@@ -47,7 +47,7 @@ void item_contents::combine( const item_contents &rhs )
             const ret_val<bool> inserted = insert_item( *it, pocket.saved_type() );
             if( !inserted.success() ) {
                 debugmsg( "error: tried to put an item into a pocket that can't fit into it while loading. err: %s",
-                    inserted.str() );
+                          inserted.str() );
             }
         }
     }
@@ -112,6 +112,10 @@ int item_contents::insert_cost( const item &it ) const
 
 ret_val<bool> item_contents::insert_item( const item &it, item_pocket::pocket_type pk_type )
 {
+    if( pk_type == item_pocket::pocket_type::LAST ) {
+        // LAST is invalid, so we assume it will be a regular container
+        pk_type = item_pocket::pocket_type::CONTAINER;
+    }
     ret_val<item_pocket *> pocket = find_pocket_for( it, pk_type );
     if( !pocket.success() ) {
         /**

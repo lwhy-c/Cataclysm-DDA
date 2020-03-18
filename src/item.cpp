@@ -4007,7 +4007,7 @@ std::string item::display_name( unsigned int quantity ) const
     bool show_amt = false;
     // We should handle infinite charges properly in all cases.
     if( contents.num_item_stacks() == 1 ) {
-        item front_item( *contents.all_items_top( item_pocket::pocket_type::CONTAINER ).front() );
+        item front_item( *contents.all_items_top().front() );
         amount = front_item.charges;
         max_amount = front_item.charges_per_volume( get_total_capacity() );
     } else if( is_book() && get_chapters() > 0 ) {
