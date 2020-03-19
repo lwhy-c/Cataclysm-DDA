@@ -2047,6 +2047,12 @@ class item : public visitable<item>
                                                bool round_value = false ) const;
 
     private:
+        /**
+         * Checks if a magazine pocket needs to exist (if the item has magazine data) and does not
+         * If it does, creates a pocket that fits the magazine data
+         */
+        void check_and_create_magazine_pocket();
+
         bool use_amount_internal( const itype_id &it, int &quantity, std::list<item> &used,
                                   const std::function<bool( const item & )> &filter = return_true<item> );
         const use_function *get_use_internal( const std::string &use_name ) const;

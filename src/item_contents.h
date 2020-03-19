@@ -40,6 +40,7 @@ class item_contents
           * only checks CONTAINER pocket type
           */
         item_pocket *best_pocket( const item &it, bool nested );
+        void add_pocket( const pocket_data &added_pocket_data );
         ret_val<bool> can_contain_rigid( const item &it ) const;
         ret_val<bool> can_contain( const item &it ) const;
         bool can_contain_liquid( bool held_or_ground ) const;

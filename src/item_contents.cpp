@@ -53,6 +53,11 @@ void item_contents::combine( const item_contents &rhs )
     }
 }
 
+void item_contents::add_pocket( const pocket_data &added_pocket )
+{
+    contents.push_back( item_pocket( &added_pocket ) );
+}
+
 ret_val<item_pocket *> item_contents::find_pocket_for( const item &it,
         item_pocket::pocket_type pk_type )
 {
@@ -172,6 +177,11 @@ item_pocket *item_contents::best_pocket( const item &it, bool nested )
     }
     item_pocket *ret = nullptr;
     for( item_pocket &pocket : contents ) {
+        if( !pocket.is_type( item_pocket::pocket_type::CONTAINER ) ) {
+            // best pocket is for picking stuff up.
+            // containers are the only pockets that are available for such
+            continue;
+        }
         if( nested && !pocket.rigid() ) {
             continue;
         }

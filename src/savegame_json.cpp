@@ -2314,6 +2314,7 @@ void item::deserialize( JsonIn &jsin )
         contents = item_contents( type->pockets );
         contents.combine( read_contents );
     }
+    check_and_create_magazine_pocket();
 }
 
 void item::serialize( JsonOut &json ) const
