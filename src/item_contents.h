@@ -106,6 +106,7 @@ class item_contents
         // what will the move cost be of storing @it into this container? (CONTAINER pocket type)
         int insert_cost( const item &it ) const;
         ret_val<bool> insert_item( const item &it, item_pocket::pocket_type pk_type );
+        void force_insert_item( const item &it, item_pocket::pocket_type pk_type );
         // fills the contents to the brim of this item
         void fill_with( const item &contained );
         bool can_unload_liquid() const;
@@ -140,6 +141,7 @@ class item_contents
         void casings_handle( const std::function<bool( item & )> &func );
 
         item *get_item_with( const std::function<bool( const item & )> &filter );
+        void remove_items_if( const std::function<bool( item & )> &filter );
 
         // whether the contents has a pocket with the associated type
         bool has_pocket_type( const item_pocket::pocket_type pk_type ) const;
@@ -157,6 +159,7 @@ class item_contents
         void migrate_item( item &obj, const std::set<itype_id> &migrations );
         bool item_has_uses_recursive() const;
         bool stacks_with( const item_contents &rhs ) const;
+        bool same_contents( const item_contents &rhs ) const;
         // can this item be used as a funnel?
         bool is_funnel_container( units::volume &bigger_than ) const;
         /**

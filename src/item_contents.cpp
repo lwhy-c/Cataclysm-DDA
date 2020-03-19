@@ -145,6 +145,17 @@ ret_val<bool> item_contents::insert_item( const item &it, item_pocket::pocket_ty
     return ret_val<bool>::make_failure( "No success" );
 }
 
+void item_contents::force_insert_item( const item &it, item_pocket::pocket_type pk_type )
+{
+    for( item_pocket &pocket : contents ) {
+        if( pocket.is_type( pk_type ) ) {
+            pocket.add( it );
+            return;
+        }
+    }
+    debugmsg( "ERROR: Could not insert item %s as contents does not have pocket type", it.tname() );
+}
+
 void item_contents::fill_with( const item &contained )
 {
     for( item_pocket &pocket : contents ) {
@@ -414,6 +425,18 @@ bool item_contents::stacks_with( const item_contents &rhs ) const
     } );
 }
 
+bool item_contents::same_contents( const item_contents &rhs ) const
+{
+    if( contents.size() != rhs.contents.size() ) {
+        return false;
+    }
+    return std::equal( contents.begin(), contents.end(),
+                       rhs.contents.begin(), rhs.contents.end(),
+    []( const item_pocket & a, const item_pocket & b ) {
+        return a.same_contents( b );
+    } );
+}
+
 bool item_contents::is_funnel_container( units::volume &bigger_than ) const
 {
     for( const item_pocket &pocket : contents ) {
@@ -435,6 +458,13 @@ item *item_contents::get_item_with( const std::function<bool( const item &it )> 
         }
     }
     return nullptr;
+}
+
+void item_contents::remove_items_if( const std::function<bool( item & )> &filter )
+{
+    for( item_pocket &pocket : contents ) {
+        pocket.remove_items_if( filter );
+    }
 }
 
 std::list<item *> item_contents::all_items_top( item_pocket::pocket_type pk_type )

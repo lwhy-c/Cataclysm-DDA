@@ -328,8 +328,8 @@ static item tool_with_battery( const itype_id &tool, const int battery_charges )
     item it( tool );
     item mag( it.magazine_default() );
     item ammo( mag.ammo_default(), -1, battery_charges );
-    mag.contents.insert_legacy( ammo );
-    it.contents.insert_legacy( mag );
+    mag.put_in( ammo, item_pocket::pocket_type::MAGAZINE );
+    it.put_in( mag, item_pocket::pocket_type::MAGAZINE );
     return it;
 }
 
@@ -373,7 +373,8 @@ TEST_CASE( "charge_handling", "[crafting]" )
     }
     SECTION( "UPS_modded_carver" ) {
         std::vector<item> tools;
-        hotplate.put_in( item( "battery_ups" ) );
+        item hotplate( "hotplate" );
+        hotplate.put_in( item( "battery_ups" ), item_pocket::pocket_type::MAGAZINE );
         tools.push_back( hotplate );
         tools.emplace_back( "screwdriver" );
         tools.emplace_back( "mold_plastic" );
@@ -393,11 +394,11 @@ TEST_CASE( "charge_handling", "[crafting]" )
     SECTION( "UPS_modded_carver_missing_charges" ) {
         std::vector<item> tools;
         item hotplate( "hotplate", -1, 0 );
-        hotplate.put_in( item( "battery_ups" ) );
+        hotplate.put_in( item( "battery_ups" ), item_pocket::pocket_type::MAGAZINE );
         tools.push_back( hotplate );
         item soldering_iron( "soldering_iron" );
         tools.insert( tools.end(), 10, item( "solder_wire" ) );
-        soldering_iron.put_in( item( "battery_ups" ) );
+        soldering_iron.put_in( item( "battery_ups" ), item_pocket::pocket_type::MAGAZINE );
         tools.push_back( soldering_iron );
         tools.emplace_back( "screwdriver" );
         tools.emplace_back( "mold_plastic" );
@@ -419,7 +420,7 @@ TEST_CASE( "tool_use", "[crafting]" )
         std::vector<item> tools;
         tools.push_back( tool_with_battery( "hotplate", 20 ) );
         item plastic_bottle( "bottle_plastic" );
-        plastic_bottle.put_in( item( "water", -1, 2 ) );
+        plastic_bottle.put_in( item( "water", -1, 2 ), item_pocket::pocket_type::CONTAINER );
         tools.push_back( plastic_bottle );
         tools.emplace_back( "pot" );
 
@@ -430,12 +431,12 @@ TEST_CASE( "tool_use", "[crafting]" )
         std::vector<item> tools;
         tools.push_back( tool_with_battery( "hotplate", 20 ) );
         item plastic_bottle( "bottle_plastic" );
-        plastic_bottle.put_in( item( "water", -1, 2 ) );
+        plastic_bottle.put_in( item( "water", -1, 2 ), item_pocket::pocket_type::CONTAINER );
         tools.push_back( plastic_bottle );
         item jar( "jar_glass" );
         // If it's not watertight the water will spill.
         REQUIRE( jar.is_watertight_container() );
-        jar.put_in( item( "water", -1, 2 ) );
+        jar.put_in( item( "water", -1, 2 ), item_pocket::pocket_type::CONTAINER );
         tools.push_back( jar );
 
         prep_craft( recipe_id( "water_clean" ), tools, false );
